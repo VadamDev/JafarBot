@@ -40,27 +40,23 @@ public class Profile implements Serializable {
     }
 
     public void updateAndComputeDeconnectionTime() {
-        if(this.connectionTime == 0)
+        if(connectionTime == 0)
             return;
 
         final long deconnectionTime = System.currentTimeMillis();
         if(deconnectionTime - connectionTime < 600000) {
-            this.connectionTime = 0;
+            connectionTime = 0;
             return;
         }
 
-        final long[][] newData = new long[ACTIVITY_BUFFER_SIZE][2];
+        long[][] newData = new long[ACTIVITY_BUFFER_SIZE][2];
         newData[0] = new long[]{connectionTime, deconnectionTime};
 
-        for (int i = 0; i < ACTIVITY_BUFFER_SIZE; i++) {
-            if(i + 1 >= ACTIVITY_BUFFER_SIZE)
-                break;
+        for(int i = 1; i < activityData.length; i++)
+            newData[i] = activityData[i - 1];
 
-            newData[i + 1] = activityData[i];
-        }
-
-        this.connectionTime = 0;
-        this.activityData = newData;
+        activityData = newData;
+        connectionTime = 0;
     }
 
     public long getLastActivity() {

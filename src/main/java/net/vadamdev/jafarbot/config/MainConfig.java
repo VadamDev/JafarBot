@@ -82,6 +82,7 @@ public class MainConfig extends Configuration {
     /*
        Channel Creator
      */
+
     @ConfigValue(path = "channelCreator.boatCreator")
     public String BOAT_CREATOR = "ID_HERE";
 
@@ -99,6 +100,16 @@ public class MainConfig extends Configuration {
 
     @ConfigValue(path = "channelCreator.captainedBoatCreatorCategory")
     public String CAPTAINED_BOAT_CREATOR_CATEGORY = "ID_HERE";
+
+    /*
+       Music
+     */
+
+    @ConfigValue(path = "music.defaultVolume")
+    public int MUSIC_DEFAULT_VOLUME = 25;
+
+    @ConfigValue(path = "music.maxVolume")
+    public int MUSIC_MAX_VOLUME = 100;
 
     public MainConfig() {
         super("JafarBot/config.yml");

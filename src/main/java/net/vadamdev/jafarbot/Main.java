@@ -17,6 +17,7 @@ public class Main {
 
         application.registerCommand("profiles-serialize", bot -> bot.getProfileManager().serialize());
         application.registerCommand("profiles-unserialize", bot -> bot.getProfileManager().unserialize());
+        application.registerCommand("check-activity", bot -> bot.activityTracker.checkServerActivity());
 
         application.start();
     }

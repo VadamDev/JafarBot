@@ -124,6 +124,7 @@ public class InfoCommand extends Command implements ISlashCommand {
         StringBuilder description = new StringBuilder();
 
         Main.jafarBot.getProfileManager().getProfiles().stream()
+                .filter(profile -> guild.getMemberById(profile.getUserId()) != null)
                 .filter(profile -> {
                     final long[] activityData = profile.getActivityData()[0];
                     return activityData[0] != 0 && activityData[1] != 0;

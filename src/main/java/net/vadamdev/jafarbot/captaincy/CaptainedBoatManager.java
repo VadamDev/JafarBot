@@ -59,10 +59,8 @@ public final class CaptainedBoatManager {
             }else if(!member.hasPermission(Permission.ADMINISTRATOR) && voiceChannel.getMembers().size() >= voiceChannel.getUserLimit())
                 getCaptainedBoats().stream()
                         .filter(captainedBoat -> channelId.equals(captainedBoat.getChannelId()))
+                        .filter(CaptainedBoat::isHeavyLocked)
                         .findFirst().ifPresent(captainedBoat -> {
-                            if(!captainedBoat.isHeavyLocked())
-                                return;
-
                             guild.moveVoiceMember(member, event.getChannelLeft()).queue();
 
                             member.getUser().openPrivateChannel()
@@ -70,19 +68,18 @@ public final class CaptainedBoatManager {
                                             .setTitle("Bateaux Capitainés")
                                             .setDescription("Ce channel a été bloquer par son capitaine. **Vous ne pouvez pas le rejoindre** !")
                                             .setColor(Color.RED)
-                                            .setFooter("JafarBot", Main.jafarBot.getAvatarURL()).build())
-                                    ).queue();
+                                            .setFooter("JafarBot", Main.jafarBot.getAvatarURL()).build())).queue();
                         });
         }
 
         if(event.getChannelLeft() != null && event.getChannelLeft().getType().equals(ChannelType.VOICE)) {
             final VoiceChannel voiceChannel = event.getChannelLeft().asVoiceChannel();
-            if(!voiceChannel.getMembers().isEmpty())
-                return;
-
-            getCaptainedBoats().stream()
-                    .filter(boat -> boat.isAlive() && boat.getChannelId().equals(voiceChannel.getId()))
-                    .findFirst().ifPresent(boat -> boat.deleteChannel(event.getGuild()));
+            if(voiceChannel.getMembers().isEmpty()) {
+                getCaptainedBoats().stream()
+                        .filter(CaptainedBoat::isAlive)
+                        .filter(boat -> boat.getChannelId().equals(voiceChannel.getId()))
+                        .findFirst().ifPresent(boat -> boat.deleteChannel(event.getGuild()));
+            }
         }
     }
 
@@ -169,8 +166,13 @@ public final class CaptainedBoatManager {
             return;
 
         getCaptainedBoatByChannel(event.getChannel().getId()).ifPresent(captainedBoat -> {
-            captainedBoat.setNameByBoatType(event.getGuild(), BoatType.valueOf(event.getValues().get(0)));
+            if(!captainedBoat.getOwnerId().equals(event.getMember().getId())) {
+                event.replyEmbeds(NOT_OWNER_MESSAGE).setEphemeral(true).queue();
+                return;
+            }
+
             event.deferEdit().queue();
+            captainedBoat.setNameByBoatType(event.getGuild(), BoatType.valueOf(event.getValues().get(0)));
         });
     }
 

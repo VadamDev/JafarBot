@@ -39,11 +39,13 @@ public class JDAApplication<T extends JDABot> {
 
         Scanner scanner = new Scanner(System.in);
         do {
-            String str = scanner.next();
+            try {
+                String str = scanner.next();
 
-            commands.entrySet().stream()
-                    .filter(entry -> entry.getKey().equals(str))
-                    .findFirst().ifPresent(entry -> entry.getValue().accept(jdaBot));
+                commands.entrySet().stream()
+                        .filter(entry -> entry.getKey().equals(str))
+                        .findFirst().ifPresent(entry -> entry.getValue().accept(jdaBot));
+            }catch(Exception ignored) {}
         }while(scanner.hasNext());
     }
 
@@ -57,7 +59,7 @@ public class JDAApplication<T extends JDABot> {
     }
 
     private void addDefaultCommands() {
-        commands.put("stop", jdaBot -> this.stop());
+        commands.put("stop", jdaBot -> stop());
 
         if(jdaBot instanceof IReloadable) {
             commands.put("reload", jdaBot -> {

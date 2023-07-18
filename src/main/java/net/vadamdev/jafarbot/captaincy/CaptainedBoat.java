@@ -17,6 +17,7 @@ import org.json.simple.JSONObject;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.awt.*;
+import java.util.List;
 import java.util.*;
 
 public class CaptainedBoat {
@@ -52,8 +53,6 @@ public class CaptainedBoat {
 
         guild.createVoiceChannel(getNameByPreference(), guild.getCategoryById(Main.jafarBot.mainConfig.CAPTAINED_BOAT_CREATOR_CATEGORY)).setUserlimit(preferredBoatType != null && defaultLocked ? preferredBoatType.getMaxCrewSize() : 0).queue(channel -> {
             channelId = channel.getId();
-
-            channel.sendMessage(getNameByPreference()).queue();
 
             updateOrCreateConfigMessage(guild);
             guild.moveVoiceMember(guild.getMemberById(ownerId), channel).queue();
@@ -139,7 +138,7 @@ public class CaptainedBoat {
 
     private MessageEmbed createConfigMessage(User owner) {
         return new EmbedBuilder()
-                .setTitle("Bateau de " + owner.getEffectiveName())
+                .setTitle(getNameByPreference().split("┃")[1] + " (Commandé par " + owner.getEffectiveName() + ")")
                 .setDescription(
                         ">>> Status: " + (locked ? "\uD83D\uDD12" : "\uD83D\uDD13") + "\n" +
                         "ForceLock: " + (heavyLocked ? "✅" : "❌"))
@@ -168,7 +167,7 @@ public class CaptainedBoat {
     }
 
     private SelectOption[] getBoatNameOptions() {
-        final Set<SelectOption> options = new HashSet<>();
+        final List<SelectOption> options = new ArrayList<>();
 
         for(BoatType boatType : BoatType.values()) {
             if(names.get(boatType) == null)

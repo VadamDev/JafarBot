@@ -1,6 +1,7 @@
 package net.vadamdev.jafarbot;
 
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
@@ -12,6 +13,7 @@ import net.vadamdev.jafarbot.channelcreator.ChannelCreatorManager;
 import net.vadamdev.jafarbot.commands.*;
 import net.vadamdev.jafarbot.config.MainConfig;
 import net.vadamdev.jafarbot.listeners.EventListener;
+import net.vadamdev.jafarbot.music.PlayerManager;
 import net.vadamdev.jafarbot.profile.ProfileManager;
 import net.vadamdev.jafarbot.rolereaction.RoleOption;
 import net.vadamdev.jafarbot.rolereaction.RoleReaction;
@@ -38,8 +40,9 @@ public class JafarBot extends JDABot implements IReloadable {
     private RoleReactionManager roleReactionManager;
     private ChannelCreatorManager channelCreatorManager;
     private CaptainedBoatManager captainedBoatManager;
+    private PlayerManager playerManager;
 
-    private ActivityTracker activityTracker;
+    protected ActivityTracker activityTracker;
 
     public JafarBot() {
         super(BotToken.RELEASE.getToken(), "!");
@@ -63,6 +66,10 @@ public class JafarBot extends JDABot implements IReloadable {
 
         captainedBoatManager = new CaptainedBoatManager();
 
+        final Guild guild = jda.getGuildById(mainConfig.GUILD_ID);
+        if(guild != null)
+            playerManager = new PlayerManager(guild);
+
         registerListeners(
                 new EventListener()
         );
@@ -75,7 +82,9 @@ public class JafarBot extends JDABot implements IReloadable {
                 new ActivityCommand(),
 
                 new BoatCommand(),
-                new BoatOptionsCommand()
+                new BoatOptionsCommand(),
+
+                new MusicCommand()
         );
 
         activityTracker = new ActivityTracker(jda);
@@ -176,5 +185,9 @@ public class JafarBot extends JDABot implements IReloadable {
 
     public CaptainedBoatManager getCaptainedBoatManager() {
         return captainedBoatManager;
+    }
+
+    public PlayerManager getPlayerManager() {
+        return playerManager;
     }
 }

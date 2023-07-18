@@ -37,7 +37,7 @@ public class ProfileManager {
         unserialize();
 
         this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-        this.scheduledExecutorService.scheduleAtFixedRate(this::unserialize, 6, 6, TimeUnit.HOURS);
+        this.scheduledExecutorService.scheduleAtFixedRate(this::serialize, 6, 6, TimeUnit.HOURS);
     }
 
     public void onDisable() {

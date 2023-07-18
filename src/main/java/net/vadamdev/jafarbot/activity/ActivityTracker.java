@@ -7,7 +7,8 @@ import net.dv8tion.jda.api.entities.Role;
 import net.vadamdev.jafarbot.Main;
 import net.vadamdev.jafarbot.profile.Profile;
 
-import java.util.Calendar;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -28,10 +29,10 @@ public class ActivityTracker {
         this.scheduledExecutorService.scheduleAtFixedRate(this::checkServerActivity, 0, 6, TimeUnit.HOURS);
     }
 
-    private void checkServerActivity() {
+    public void checkServerActivity() {
         final Guild guild = jda.getGuildById(Main.jafarBot.mainConfig.GUILD_ID);
         final Role inactiveRole = guild.getRoleById(Main.jafarBot.mainConfig.STUCKED_ROLE);
-        final Date currentDate = new Date();
+        final LocalDate currentDate = LocalDate.now();
 
         Main.jafarBot.getProfileManager().getProfiles().stream()
                 .filter(profile -> !profile.isInVocal())
@@ -39,7 +40,7 @@ public class ActivityTracker {
                 .forEach(profile -> checkProfileActivity(profile, guild, inactiveRole, currentDate));
     }
 
-    private void checkProfileActivity(Profile profile, Guild guild, Role inactiveRole, Date currentDate) {
+    private void checkProfileActivity(Profile profile, Guild guild, Role inactiveRole, LocalDate currentDate) {
         final Member member = guild.getMemberById(profile.getUserId());
 
         final boolean hasInactiveRole = hasInactiveRole(member, inactiveRole.getId());
@@ -54,7 +55,7 @@ public class ActivityTracker {
         }
     }
 
-    private boolean shouldBeInactive(Profile profile, Member member, Date currentDate) {
+    private boolean shouldBeInactive(Profile profile, Member member, LocalDate currentDate) {
         if(member.getRoles().stream().anyMatch(r -> r.getId().equals(Main.jafarBot.mainConfig.FRIEND_ROLE)))
             return false;
 
@@ -63,11 +64,7 @@ public class ActivityTracker {
             if(lastActivity == 0)
                 continue;
 
-            final Calendar calendar = Calendar.getInstance();
-            calendar.setTime(new Date(lastActivity));
-            calendar.add(Calendar.DAY_OF_MONTH, 14);
-
-            if(!currentDate.before(calendar.getTime()))
+            if(currentDate.isAfter(new Date(lastActivity).toInstant().atZone(ZoneId.systemDefault()).toLocalDate().plusDays(14)))
                 return true;
         }
 
