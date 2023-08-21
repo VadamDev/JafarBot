@@ -27,7 +27,7 @@ public class CaptainedBoat {
     private BoatType preferredBoatType;
     private boolean defaultLocked;
 
-    private String channelId, configMessageId;
+    private String channelId, currentName, configMessageId;
     private boolean locked, heavyLocked;
 
     public CaptainedBoat(String ownerId) {
@@ -51,7 +51,8 @@ public class CaptainedBoat {
             return;
         }
 
-        guild.createVoiceChannel(getNameByPreference(), guild.getCategoryById(Main.jafarBot.mainConfig.CAPTAINED_BOAT_CREATOR_CATEGORY)).setUserlimit(preferredBoatType != null && defaultLocked ? preferredBoatType.getMaxCrewSize() : 0).queue(channel -> {
+        currentName = getNameByPreference();
+        guild.createVoiceChannel(currentName, guild.getCategoryById(Main.jafarBot.mainConfig.CAPTAINED_BOAT_CREATOR_CATEGORY)).setUserlimit(preferredBoatType != null && defaultLocked ? preferredBoatType.getMaxCrewSize() : 0).queue(channel -> {
             channelId = channel.getId();
 
             updateOrCreateConfigMessage(guild);
@@ -68,6 +69,7 @@ public class CaptainedBoat {
             voiceChannel.delete().queue();
 
         channelId = null;
+        currentName = null;
         configMessageId = null;
         locked = false;
         heavyLocked = false;
@@ -129,7 +131,10 @@ public class CaptainedBoat {
         if(!isAlive() || names.get(boatType) == null)
             return;
 
-        guild.getVoiceChannelById(channelId).getManager().setName(names.get(boatType)).queue();
+        currentName = names.get(boatType);
+        guild.getVoiceChannelById(channelId).getManager().setName(currentName).queue();
+
+        updateOrCreateConfigMessage(guild);
     }
 
     /*
@@ -138,7 +143,7 @@ public class CaptainedBoat {
 
     private MessageEmbed createConfigMessage(User owner) {
         return new EmbedBuilder()
-                .setTitle(getNameByPreference().split("┃")[1] + " (Commandé par " + owner.getEffectiveName() + ")")
+                .setTitle(currentName.split("┃")[1] + " (Commandé par " + owner.getEffectiveName() + ")")
                 .setDescription(
                         ">>> Status: " + (locked ? "\uD83D\uDD12" : "\uD83D\uDD13") + "\n" +
                         "ForceLock: " + (heavyLocked ? "✅" : "❌"))

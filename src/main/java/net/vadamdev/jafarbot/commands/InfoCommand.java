@@ -4,10 +4,8 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
@@ -17,11 +15,9 @@ import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import net.vadamdev.jafarbot.Main;
 import net.vadamdev.jafarbot.activity.ActivityTracker;
 import net.vadamdev.jafarbot.profile.Profile;
-import net.vadamdev.jafarbot.utils.Utils;
 import net.vadamdev.jdautils.commands.Command;
 import net.vadamdev.jdautils.commands.ISlashCommand;
 import net.vadamdev.jdautils.commands.data.ICommandData;
-import net.vadamdev.jdautils.commands.data.impl.TextCommandData;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
@@ -29,12 +25,6 @@ import java.time.Instant;
 import java.util.Comparator;
 
 public class InfoCommand extends Command implements ISlashCommand {
-    private final MessageEmbed ERROR_MESSAGE = new EmbedBuilder()
-            .setTitle("Informations - Erreur")
-            .setDescription("Une erreur est survenue.\nUtilisez la commande ``!info <member>``")
-            .setFooter("JafarBot", Main.jafarBot.getAvatarURL())
-            .setColor(Color.RED).build();
-
     public InfoCommand() {
         super("info");
         setPermission(Permission.MESSAGE_MANAGE);
@@ -42,43 +32,19 @@ public class InfoCommand extends Command implements ISlashCommand {
 
     @Override
     public void execute(@Nonnull Member sender, @Nonnull ICommandData commandData) {
-        if(commandData.getType().equals(ICommandData.Type.SLASH)) {
-            SlashCommandInteractionEvent event = ((net.vadamdev.jdautils.commands.data.impl.SlashCommandData) commandData).getEvent();
+        final SlashCommandInteractionEvent event = ((net.vadamdev.jdautils.commands.data.impl.SlashCommandData) commandData).getEvent();
 
-            final String subCommand = event.getSubcommandName();
-            if(subCommand == null)
-                return;
+        switch(event.getSubcommandName()) {
+            case "get":
+                event.replyEmbeds(getUserInfos(event.getOption("target").getAsMember())).queue();
 
-            if(subCommand.equals("top")) {
+                break;
+            case "top":
                 event.replyEmbeds(createUserTop(event.getGuild(), event.getOption("everyone", false, OptionMapping::getAsBoolean))).queue();
-            }else if(subCommand.equals("get")) {
-                Member target = event.getOption("target").getAsMember();
-                event.replyEmbeds(getUserInfos(target)).queue();
-            }
-        }else if(commandData.getType().equals(ICommandData.Type.TEXT)) {
-            TextCommandData textCommandData = ((TextCommandData) commandData);
 
-            String[] args = textCommandData.getArgs();
-            MessageReceivedEvent event = textCommandData.getEvent();
-
-            Message message = event.getMessage();
-
-            if(args.length != 1) {
-                message.replyEmbeds(ERROR_MESSAGE).queue();
-                return;
-            }
-
-            if(args[0].equalsIgnoreCase("top"))
-                message.replyEmbeds(createUserTop(event.getGuild(), false)).queue();
-            else {
-                Member target = Utils.formatTarget(args[0], message.getMentions(), event.getGuild());
-                if(target == null) {
-                    message.replyEmbeds(ERROR_MESSAGE).queue();
-                    return;
-                }
-
-                message.replyEmbeds(getUserInfos(target)).queue();
-            }
+                break;
+            default:
+                break;
         }
     }
 

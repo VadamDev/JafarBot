@@ -11,6 +11,8 @@ import java.lang.reflect.Field;
  * @since 18/10/2022
  */
 public final class ConfigurationLoader {
+    private ConfigurationLoader() {}
+
     public static void loadConfiguration(Configuration configuration) throws IOException, IllegalAccessException {
         final YamlFile yamlFile = configuration.getYamlFile();
 

@@ -35,6 +35,6 @@ public final class JDAUtils {
         if(commandHandler == null)
             return;
 
-        commandHandler.registerCommands();
+        commandHandler.registerSlashCommands();
     }
 }

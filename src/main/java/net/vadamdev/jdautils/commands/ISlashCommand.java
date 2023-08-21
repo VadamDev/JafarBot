@@ -16,6 +16,6 @@ public interface ISlashCommand {
     default void onAutoCompleteEvent(@Nonnull CommandAutoCompleteInteractionEvent event) {}
 
     default boolean isSlashOnly() {
-        return false;
+        return true;
     }
 }

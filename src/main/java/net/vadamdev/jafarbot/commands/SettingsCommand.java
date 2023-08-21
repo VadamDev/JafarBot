@@ -5,9 +5,7 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
-import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
@@ -18,17 +16,10 @@ import net.vadamdev.jdautils.commands.Command;
 import net.vadamdev.jdautils.commands.ISlashCommand;
 import net.vadamdev.jdautils.commands.data.ICommandData;
 import net.vadamdev.jdautils.commands.data.impl.TextCommandData;
-import net.vadamdev.jdautils.configuration.ConfigValue;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
 import java.io.IOException;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * @author VadamDev
@@ -41,20 +32,9 @@ public class SettingsCommand extends Command implements ISlashCommand {
             .setFooter("JafarBot", Main.jafarBot.getAvatarURL())
             .setColor(Color.ORANGE).build();
 
-    private final Set<Choice> choices = new HashSet<>();
-
     public SettingsCommand() {
         super("settings");
         setPermission(Permission.ADMINISTRATOR);
-
-        for (Field field : Main.jafarBot.mainConfig.getClass().getFields()) {
-            for (Annotation annotation : field.getAnnotations()) {
-                if(annotation instanceof ConfigValue) {
-                    choices.add(new Choice(field.getName(), field.getName()));
-                    break;
-                }
-            }
-        }
     }
 
     @Override
@@ -115,13 +95,7 @@ public class SettingsCommand extends Command implements ISlashCommand {
     }
 
     @Override
-    public void onAutoCompleteEvent(@NotNull CommandAutoCompleteInteractionEvent event) {
-        if(!event.getFocusedOption().getName().equals("fieldname"))
-            return;
-
-        event.replyChoices(choices.stream()
-                .filter(choice -> choice.getName().startsWith(event.getFocusedOption().getValue()))
-                .limit(25)
-                .collect(Collectors.toSet())).queue();
+    public boolean isSlashOnly() {
+        return false;
     }
 }

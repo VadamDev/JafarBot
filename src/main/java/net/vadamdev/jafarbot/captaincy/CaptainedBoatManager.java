@@ -19,11 +19,7 @@ import javax.annotation.Nonnull;
 import java.awt.*;
 import java.util.List;
 import java.util.*;
-import java.util.function.BiConsumer;
-import java.util.function.BinaryOperator;
-import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 public final class CaptainedBoatManager {
     private final MessageEmbed NOT_OWNER_MESSAGE = new EmbedBuilder()
@@ -204,41 +200,8 @@ public final class CaptainedBoatManager {
 
     public List<CaptainedBoat> getCaptainedBoats() {
         return jafarBot.getProfileManager().getProfiles().stream()
-                .filter(profile -> profile.getCaptainedBoat() != null)
-                .collect(new CaptainedBoatCollector());
-    }
-
-    /*
-       Custom Collector
-     */
-
-   private static class CaptainedBoatCollector implements Collector<Profile, List<CaptainedBoat>, List<CaptainedBoat>>  {
-        @Override
-        public Supplier<List<CaptainedBoat>> supplier() {
-            return ArrayList::new;
-        }
-
-        @Override
-        public BiConsumer<List<CaptainedBoat>, Profile> accumulator() {
-            return (list, profile) -> list.add(profile.getCaptainedBoat());
-        }
-
-        @Override
-        public BinaryOperator<List<CaptainedBoat>> combiner() {
-            return (list1, list2) -> {
-                list1.addAll(list2);
-                return list1;
-            };
-        }
-
-        @Override
-        public Function<List<CaptainedBoat>, List<CaptainedBoat>> finisher() {
-            return Collections::unmodifiableList;
-        }
-
-        @Override
-        public Set<Characteristics> characteristics() {
-            return Collections.singleton(Characteristics.UNORDERED);
-        }
+                .map(Profile::getCaptainedBoat)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
     }
 }

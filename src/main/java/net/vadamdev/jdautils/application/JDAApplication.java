@@ -32,9 +32,14 @@ public class JDAApplication<T extends JDABot> {
 
         this.commands = new HashMap<>();
         addDefaultCommands();
+
+        logger.info("-----------------------------------------------------");
+        logger.info("JDA Utils by VadamDev (https://github.com/VadamDev)");
+        logger.info("-----------------------------------------------------");
     }
 
     public void start() throws InterruptedException {
+        logger.info("Starting " + jdaBot. getClass().getSimpleName() + "...");
         jdaBot.setup();
 
         Scanner scanner = new Scanner(System.in);
@@ -59,6 +64,14 @@ public class JDAApplication<T extends JDABot> {
     }
 
     private void addDefaultCommands() {
+        commands.put("help", jdaBot -> {
+            logger.info("Current available commands:");
+
+            commands.keySet().stream()
+                    .filter(command -> !command.equals("help"))
+                    .forEach(logger::info);
+        });
+
         commands.put("stop", jdaBot -> stop());
 
         if(jdaBot instanceof IReloadable) {

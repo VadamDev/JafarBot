@@ -21,7 +21,6 @@ import net.vadamdev.jafarbot.music.TrackScheduler;
 import net.vadamdev.jdautils.commands.Command;
 import net.vadamdev.jdautils.commands.ISlashCommand;
 import net.vadamdev.jdautils.commands.data.ICommandData;
-import net.vadamdev.jdautils.commands.data.impl.TextCommandData;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
@@ -42,16 +41,6 @@ public class MusicCommand extends Command implements ISlashCommand {
 
     @Override
     public void execute(@NotNull Member sender, @NotNull ICommandData commandData) {
-        if(!commandData.getType().equals(ICommandData.Type.SLASH)) {
-            ((TextCommandData) commandData).getEvent().getMessage().replyEmbeds(new EmbedBuilder()
-                    .setTitle("Jafarbot- Musique")
-                    .setDescription("Cette commande est uniquement supportée en version slash !")
-                    .setColor(Color.RED)
-                    .setFooter("JafarBot", Main.jafarBot.getAvatarURL()).build()).queue();
-
-            return;
-        }
-
         final SlashCommandInteractionEvent event = ((net.vadamdev.jdautils.commands.data.impl.SlashCommandData) commandData).getEvent();
 
         final GuildVoiceState senderVoiceState = sender.getVoiceState();

@@ -17,13 +17,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * @author VadamDev
  * @since 17/10/2022
  */
 public final class CommandHandler extends ListenerAdapter {
-    public static Consumer<Message> PERMISSION_ACTION = (message -> message.reply("You don't have enough permission.").queue());
+    public static Consumer<Message> PERMISSION_ACTION = message -> message.reply("You don't have enough permission.").queue();
 
     private final JDA jda;
 
@@ -54,7 +55,6 @@ public final class CommandHandler extends ListenerAdapter {
                             return;
 
                         final Member member = event.getMember();
-
                         if(command.getPermission() != null && !member.hasPermission(command.getPermission())) {
                             PERMISSION_ACTION.accept(event.getMessage());
                             return;
@@ -74,9 +74,7 @@ public final class CommandHandler extends ListenerAdapter {
         commands.stream()
                 .filter(ISlashCommand.class::isInstance)
                 .filter(command -> command.check(event.getName()))
-                .findFirst().ifPresent(command ->
-                        command.execute(event.getMember(), new SlashCommandData(event))
-                );
+                .findFirst().ifPresent(command -> command.execute(event.getMember(), new SlashCommandData(event)));
     }
 
     @Override
@@ -91,22 +89,19 @@ public final class CommandHandler extends ListenerAdapter {
         commands.add(command);
     }
 
-    public void registerCommands() {
-        final List<CommandData> commands = new ArrayList<>();
+    public void registerSlashCommands() {
+        final List<CommandData> commands = this.commands.stream()
+                .filter(ISlashCommand.class::isInstance)
+                .map(command -> {
+                    CommandData commandData = ((ISlashCommand) command).createSlashCommand();
 
-        for (Command command : this.commands) {
-            if(!(command instanceof ISlashCommand))
-                continue;
+                    if(command.getPermission() != null)
+                        commandData.setDefaultPermissions(DefaultMemberPermissions.enabledFor(command.getPermission()));
+                    else
+                        commandData.setDefaultPermissions(DefaultMemberPermissions.ENABLED);
 
-            final CommandData commandData = ((ISlashCommand) command).createSlashCommand();
-
-            if(command.getPermission() != null)
-                commandData.setDefaultPermissions(DefaultMemberPermissions.enabledFor(command.getPermission()));
-            else
-                commandData.setDefaultPermissions(DefaultMemberPermissions.ENABLED);
-
-            commands.add(commandData);
-        }
+                    return commandData;
+                }).collect(Collectors.toList());
 
         jda.updateCommands().addCommands(commands).queue();
     }

@@ -15,7 +15,6 @@ import net.vadamdev.jafarbot.captaincy.CaptainedBoat;
 import net.vadamdev.jdautils.commands.Command;
 import net.vadamdev.jdautils.commands.ISlashCommand;
 import net.vadamdev.jdautils.commands.data.ICommandData;
-import net.vadamdev.jdautils.commands.data.impl.TextCommandData;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
@@ -33,16 +32,6 @@ public class BoatOptionsCommand extends Command implements ISlashCommand {
 
     @Override
     public void execute(@NotNull Member sender, @NotNull ICommandData commandData) {
-        if(!commandData.getType().equals(ICommandData.Type.SLASH)) {
-            ((TextCommandData) commandData).getEvent().getMessage().replyEmbeds(new EmbedBuilder()
-                    .setTitle("Bateaux Capitainé")
-                    .setDescription("Cette commande est maintenant uniquement supportée en version slash !")
-                    .setColor(Color.RED)
-                    .setFooter("JafarBot", Main.jafarBot.getAvatarURL()).build()).queue();
-
-            return;
-        }
-
         final SlashCommandInteractionEvent event = ((net.vadamdev.jdautils.commands.data.impl.SlashCommandData) commandData).getEvent();
 
         final CaptainedBoat captainedBoat = Main.jafarBot.getProfileManager().getProfile(event.getMember().getId()).getCaptainedBoat();
