@@ -31,11 +31,11 @@ public final class RoleReactionManager {
                 .ifPresent(roleOption -> roleOption.computeRole(event.getMember(), event));
     }
 
-    public void addRoleReaction(@Nonnull RoleReaction roleReaction) {
+    public void addRoleReaction(RoleReaction roleReaction) {
         roleReactions.put(roleReaction.getName(), roleReaction);
     }
 
-    public Optional<RoleReaction> findRoleReactionByName(@Nonnull String name) {
+    public Optional<RoleReaction> findRoleReactionByName(String name) {
         return Optional.ofNullable(roleReactions.get(name));
     }
 

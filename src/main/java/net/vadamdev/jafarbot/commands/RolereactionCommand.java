@@ -43,8 +43,9 @@ public class RolereactionCommand extends Command implements ISlashCommand {
                 .setColor(Color.ORANGE).build()).setEphemeral(true).queue();
     }
 
+    @Nonnull
     @Override
-    public @Nonnull SlashCommandData createSlashCommand() {
+    public SlashCommandData createSlashCommand() {
         final Set<Choice> choices =  Main.jafarBot.getRoleReactionManager().getRoleReactions().stream()
                 .map(roleReaction -> new Choice(roleReaction, roleReaction))
                 .collect(Collectors.toSet());

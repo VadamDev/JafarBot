@@ -24,18 +24,6 @@ public final class RoleOption {
         this.emoji = emoji;
     }
 
-    String getRoleId() {
-        return roleId;
-    }
-
-    Emoji getEmoji() {
-        return emoji;
-    }
-
-    boolean hasRole(Member member) {
-        return member.getRoles().stream().anyMatch(role -> role.getId().equals(roleId));
-    }
-
     void computeRole(Member member, IReplyCallback replyCallback) {
         final Guild guild = member.getGuild();
 
@@ -59,6 +47,18 @@ public final class RoleOption {
                     .setFooter("JafarBot", Main.jafarBot.getAvatarURL())
                     .setColor(Color.ORANGE)
                     .build()).setEphemeral(true).queue());
+    }
+
+    String getRoleId() {
+        return roleId;
+    }
+
+    Emoji getEmoji() {
+        return emoji;
+    }
+
+    boolean hasRole(Member member) {
+        return member.getRoles().stream().anyMatch(role -> role.getId().equals(roleId));
     }
 
     public static RoleOption of(@Nonnull String role, @Nonnull Emoji emoji) {

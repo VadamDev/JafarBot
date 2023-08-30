@@ -17,6 +17,7 @@ import net.vadamdev.jdautils.commands.ISlashCommand;
 import net.vadamdev.jdautils.commands.data.ICommandData;
 import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
 import java.awt.*;
 
 public class BoatOptionsCommand extends Command implements ISlashCommand {
@@ -31,7 +32,7 @@ public class BoatOptionsCommand extends Command implements ISlashCommand {
     }
 
     @Override
-    public void execute(@NotNull Member sender, @NotNull ICommandData commandData) {
+    public void execute(@Nonnull Member sender, @Nonnull ICommandData commandData) {
         final SlashCommandInteractionEvent event = ((net.vadamdev.jdautils.commands.data.impl.SlashCommandData) commandData).getEvent();
 
         final CaptainedBoat captainedBoat = Main.jafarBot.getProfileManager().getProfile(event.getMember().getId()).getCaptainedBoat();
@@ -59,7 +60,7 @@ public class BoatOptionsCommand extends Command implements ISlashCommand {
         }
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public SlashCommandData createSlashCommand() {
         return Commands.slash(name, "Permet de modifier certains paramètres de votre bateau capitainée")

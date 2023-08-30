@@ -6,7 +6,9 @@ import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel;
 import net.dv8tion.jda.api.interactions.components.ItemComponent;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.vadamdev.jafarbot.Main;
 
+import java.awt.*;
 import java.util.Optional;
 
 /**
@@ -36,21 +38,23 @@ public class RoleReaction {
         for (RoleOption roleOption : roleOptions)
             description.append(roleOption.getEmoji().getName() + " • " + guild.getRoleById(roleOption.getRoleId()).getName() + "\n");
 
-        return new EmbedBuilder().setTitle(title).setDescription(description.toString()).build();
+        return new EmbedBuilder()
+                .setTitle(title)
+                .setDescription(description.toString())
+                .setColor(Color.YELLOW)
+                .setFooter("JafarBot", Main.jafarBot.getAvatarURL())
+                .build();
     }
 
     Optional<RoleOption> findRoleOptionByRoleId(String roleId) {
-        RoleOption roleOption = null;
-
         for(RoleOption option : roleOptions) {
             if(!option.getRoleId().equals(roleId))
                 continue;
 
-            roleOption = option;
-            break;
+            return Optional.of(option);
         }
 
-        return Optional.ofNullable(roleOption);
+        return Optional.empty();
     }
 
     String getName() {

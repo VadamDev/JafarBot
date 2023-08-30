@@ -51,8 +51,9 @@ public class ActivityCommand extends Command implements ISlashCommand {
         }
     }
 
+    @Nonnull
     @Override
-    public @Nonnull SlashCommandData createSlashCommand() {
+    public SlashCommandData createSlashCommand() {
         return Commands.slash(name, "Commande permettant de changer l'activité du bot")
                 .addOptions(
                         new OptionData(OptionType.STRING, "activitytype", "Type d'activité")

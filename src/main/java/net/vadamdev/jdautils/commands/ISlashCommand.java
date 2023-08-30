@@ -13,6 +13,7 @@ public interface ISlashCommand {
     @Nonnull
     SlashCommandData createSlashCommand();
 
+    @Deprecated
     default void onAutoCompleteEvent(@Nonnull CommandAutoCompleteInteractionEvent event) {}
 
     default boolean isSlashOnly() {

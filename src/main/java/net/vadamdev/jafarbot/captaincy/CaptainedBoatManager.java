@@ -7,18 +7,20 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
+import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
-import net.vadamdev.jafarbot.JafarBot;
 import net.vadamdev.jafarbot.Main;
 import net.vadamdev.jafarbot.profile.Profile;
+import net.vadamdev.jafarbot.profile.ProfileManager;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
 import java.util.List;
-import java.util.*;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public final class CaptainedBoatManager {
@@ -28,10 +30,10 @@ public final class CaptainedBoatManager {
             .setColor(Color.RED)
             .setFooter("JafarBot", Main.jafarBot.getAvatarURL()).build();
 
-    private final JafarBot jafarBot;
+    private final ProfileManager profileManager;
 
     public CaptainedBoatManager() {
-        this.jafarBot = Main.jafarBot;
+        this.profileManager = Main.jafarBot.getProfileManager();
     }
 
     /*
@@ -39,14 +41,17 @@ public final class CaptainedBoatManager {
      */
 
     public void handleVoiceUpdateEvent(@Nonnull GuildVoiceUpdateEvent event) {
-        if(event.getChannelJoined() != null && event.getChannelJoined().getType().equals(ChannelType.VOICE)) {
-            final VoiceChannel voiceChannel = event.getChannelJoined().asVoiceChannel();
+        final AudioChannelUnion joined = event.getChannelJoined();
+        final AudioChannelUnion left = event.getChannelLeft();
+
+        if(joined != null && joined.getType().equals(ChannelType.VOICE)) {
+            final VoiceChannel voiceChannel = joined.asVoiceChannel();
             final String channelId = voiceChannel.getId();
             final Member member = event.getMember();
             final Guild guild = event.getGuild();
 
             if(channelId.equals(Main.jafarBot.mainConfig.CAPTAINED_BOAT_CREATOR)) {
-                final Profile profile = jafarBot.getProfileManager().getProfile(member.getId());
+                final Profile profile = profileManager.getProfile(member.getId());
 
                 if(profile.getCaptainedBoat() != null)
                     profile.getCaptainedBoat().createChannel(guild);
@@ -68,13 +73,13 @@ public final class CaptainedBoatManager {
                         });
         }
 
-        if(event.getChannelLeft() != null && event.getChannelLeft().getType().equals(ChannelType.VOICE)) {
-            final VoiceChannel voiceChannel = event.getChannelLeft().asVoiceChannel();
+        if(left != null && left.getType().equals(ChannelType.VOICE)) {
+            final VoiceChannel voiceChannel = left.asVoiceChannel();
             if(voiceChannel.getMembers().isEmpty()) {
                 getCaptainedBoats().stream()
                         .filter(CaptainedBoat::isAlive)
                         .filter(boat -> boat.getChannelId().equals(voiceChannel.getId()))
-                        .findFirst().ifPresent(boat -> boat.deleteChannel(event.getGuild()));
+                        .findFirst().ifPresent(boat -> boat.deleteChannel(event.getGuild(), false));
             }
         }
     }
@@ -86,7 +91,7 @@ public final class CaptainedBoatManager {
         final String memberId = member.getId();
 
         switch(event.getComponentId()) {
-            case "JafarBot-lock":
+            case "jafarBot-CaptainedBoat-Lock":
                 getCaptainedBoatByChannel(channelId).ifPresent(captainedBoat -> {
                     if(!captainedBoat.getOwnerId().equals(memberId)) {
                         event.replyEmbeds(NOT_OWNER_MESSAGE).setEphemeral(true).queue();
@@ -98,7 +103,7 @@ public final class CaptainedBoatManager {
                 });
 
                 break;
-            case "JafarBot-forceLock":
+            case "jafarBot-CaptainedBoat-ForceLock":
                 getCaptainedBoatByChannel(channelId).ifPresent(captainedBoat -> {
                     if(!captainedBoat.getOwnerId().equals(memberId)) {
                         event.replyEmbeds(NOT_OWNER_MESSAGE).setEphemeral(true).queue();
@@ -110,7 +115,7 @@ public final class CaptainedBoatManager {
                 });
 
                 break;
-            case "JafarBot-deleteBoat":
+            case "jafarBot-CaptainedBoat-Delete":
                 getCaptainedBoatByChannel(channelId).ifPresent(captainedBoat -> {
                     if(!captainedBoat.getOwnerId().equals(memberId)) {
                         event.replyEmbeds(NOT_OWNER_MESSAGE).setEphemeral(true).queue();
@@ -122,25 +127,12 @@ public final class CaptainedBoatManager {
                             .setDescription("Êtes-vous sur(e) de vouloir supprimer ce salon ?\n*Cela déconnectera toutes les personnes présentent à l'intérieur !*")
                             .setColor(Color.ORANGE)
                             .setFooter("JafarBot", Main.jafarBot.getAvatarURL()).build()).setActionRow(
-                                    Button.primary("JafarBot-cancelDeleteBoat", "Annuler"),
-                                    Button.danger("JafarBot-confirmDeleteBoat", "Confirmer")
+                                    Button.danger("jafarBot-CaptainedBoat-ConfirmDelete", "Confirmer")
                             ).setEphemeral(true).queue();
                 });
 
                 break;
-            case "JafarBot-cancelDeleteBoat":
-                getCaptainedBoatByChannel(channelId).ifPresent(captainedBoat -> {
-                    if(!captainedBoat.getOwnerId().equals(memberId)) {
-                        event.replyEmbeds(NOT_OWNER_MESSAGE).setEphemeral(true).queue();
-                        return;
-                    }
-
-                    event.getMessage().delete().queue();
-                    event.deferEdit().queue();
-                });
-
-                break;
-            case "JafarBot-confirmDeleteBoat":
+            case "jafarBot-CaptainedBoat-ConfirmDelete":
                 getCaptainedBoatByChannel(channelId).ifPresent(captainedBoat -> {
                     if(!captainedBoat.getOwnerId().equals(memberId)) {
                         event.replyEmbeds(NOT_OWNER_MESSAGE).setEphemeral(true).queue();
@@ -148,7 +140,7 @@ public final class CaptainedBoatManager {
                     }
 
                     event.deferEdit().queue();
-                    captainedBoat.deleteChannel(guild);
+                    captainedBoat.deleteChannel(guild, false);
                 });
 
                 break;
@@ -158,7 +150,7 @@ public final class CaptainedBoatManager {
     }
 
     public void handleSelectInteractionEvent(@Nonnull StringSelectInteractionEvent event) {
-        if(!event.getComponentId().equals("JafarBot-ChooseBoatType"))
+        if(!event.getComponentId().equals("jafarBot-CaptainedBoat-ChooseBoatType"))
             return;
 
         getCaptainedBoatByChannel(event.getChannel().getId()).ifPresent(captainedBoat -> {
@@ -174,7 +166,7 @@ public final class CaptainedBoatManager {
 
     public void handleChannelDelete(@Nonnull Guild guild, @Nonnull VoiceChannel voiceChannel) {
         getCaptainedBoatByChannel(voiceChannel.getId())
-                .ifPresent(captainedBoat -> captainedBoat.deleteChannel(guild));
+                .ifPresent(captainedBoat -> captainedBoat.deleteChannel(guild, true));
     }
 
     /*
@@ -183,7 +175,7 @@ public final class CaptainedBoatManager {
 
     @Nonnull
     public CaptainedBoat getCaptainedBoatByUser(String userId) {
-        final Profile profile = jafarBot.getProfileManager().getProfile(userId);
+        final Profile profile = profileManager.getProfile(userId);
 
         if(profile.getCaptainedBoat() == null)
             profile.setCaptainedBoat(new CaptainedBoat(userId));
@@ -199,7 +191,7 @@ public final class CaptainedBoatManager {
     }
 
     public List<CaptainedBoat> getCaptainedBoats() {
-        return jafarBot.getProfileManager().getProfiles().stream()
+        return profileManager.getProfiles().stream()
                 .map(Profile::getCaptainedBoat)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());

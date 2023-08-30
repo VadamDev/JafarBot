@@ -2,11 +2,20 @@
 <configuration>
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{HH:mm:ss} %boldCyan(%-34.-34thread) %red(%10.10X{jda.shard}) %boldGreen(%-15.-15logger{0}) %highlight(%-6level) %msg%n</pattern>
+            <pattern>%d{HH:mm:ss} %boldCyan(%-34.-34thread) %boldGreen(%-15.-15logger{0}) %highlight(%-6level) %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="LATEST" class="ch.qos.logback.core.FileAppender">
+        <file>latest.log</file>
+        <append>false</append>
+        <encoder>
+            <pattern>[%d{HH:mm:ss}] [%logger{0}/%level]: %msg%n</pattern>
         </encoder>
     </appender>
 
     <root level="info">
         <appender-ref ref="STDOUT" />
+        <appender-ref ref="LATEST" />
     </root>
 </configuration>

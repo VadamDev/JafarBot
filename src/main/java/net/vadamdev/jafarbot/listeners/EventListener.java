@@ -10,6 +10,7 @@ import net.dv8tion.jda.api.events.channel.ChannelDeleteEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
+import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -66,12 +67,19 @@ public class EventListener extends ListenerAdapter {
     @Override
     public void onButtonInteraction(@Nonnull ButtonInteractionEvent event) {
         jafarBot.getRoleReactionManager().handleButtonEvent(event);
+        jafarBot.getChannelCreatorManager().handleButtonInteractionEvent(event);
         jafarBot.getCaptainedBoatManager().handleButtonInteractionEvent(event);
     }
 
     @Override
     public void onStringSelectInteraction(@NotNull StringSelectInteractionEvent event) {
+        jafarBot.getChannelCreatorManager().handleSelectInteractionEvent(event);
         jafarBot.getCaptainedBoatManager().handleSelectInteractionEvent(event);
+    }
+
+    @Override
+    public void onModalInteraction(@NotNull ModalInteractionEvent event) {
+        jafarBot.getChannelCreatorManager().handleModalInteractionEvent(event);
     }
 
     @Override

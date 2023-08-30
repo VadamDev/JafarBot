@@ -33,6 +33,7 @@ public final class CommandHandler extends ListenerAdapter {
 
     public CommandHandler(JDA jda, String commandPrefix) {
         this.jda = jda;
+
         this.commands = new ArrayList<>();
         this.commandPrefix = commandPrefix;
     }
@@ -43,6 +44,9 @@ public final class CommandHandler extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(@NotNull MessageReceivedEvent event) {
+        if(commandPrefix == null)
+            return;
+
         final String messageContent = event.getMessage().getContentRaw();
 
         if(messageContent.startsWith(commandPrefix)) {

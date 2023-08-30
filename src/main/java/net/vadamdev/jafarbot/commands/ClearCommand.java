@@ -24,7 +24,7 @@ import java.awt.*;
 public class ClearCommand extends Command implements ISlashCommand {
     public ClearCommand() {
         super("clear");
-        setPermission(Permission.MESSAGE_MANAGE);
+        setPermission(Permission.ADMINISTRATOR);
     }
 
     @Override
@@ -43,8 +43,9 @@ public class ClearCommand extends Command implements ISlashCommand {
                 .setFooter("JafarBot", Main.jafarBot.getAvatarURL()).build()).setEphemeral(true).queue();
     }
 
+    @Nonnull
     @Override
-    public @Nonnull SlashCommandData createSlashCommand() {
+    public SlashCommandData createSlashCommand() {
         return Commands.slash(name, "Supprime un nombre donnée de messages dans le salon ou la commande est éxécuté")
                 .addOptions(
                         new OptionData(OptionType.INTEGER, "amount", "Nombre de messages à supprimer")

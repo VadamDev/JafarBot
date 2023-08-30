@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
  * @author VadamDev
  * @since 09/06/2023
  */
-public class ProfileManager {
+public final class ProfileManager {
     private final Map<String, Profile> cache;
     private final File profilesFile;
 
@@ -51,10 +51,7 @@ public class ProfileManager {
 
     @Nonnull
     public Profile getProfile(@Nonnull String userId) {
-        if(!cache.containsKey(userId))
-            return cache.computeIfAbsent(userId, Profile::new);
-
-        return cache.get(userId);
+        return cache.computeIfAbsent(userId, Profile::new);
     }
 
     @Nonnull

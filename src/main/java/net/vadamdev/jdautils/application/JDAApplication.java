@@ -9,10 +9,13 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Scanner;
 import java.util.function.Consumer;
 
 /**
+ * Represents a JDA application. This class will handle the basics running of a {@link JDABot}
+ *
  * @author VadamDev
  * @since 08/06/2023
  */
@@ -33,23 +36,34 @@ public class JDAApplication<T extends JDABot> {
         this.commands = new HashMap<>();
         addDefaultCommands();
 
-        logger.info("-----------------------------------------------------");
-        logger.info("JDA Utils by VadamDev (https://github.com/VadamDev)");
-        logger.info("-----------------------------------------------------");
+        this.logger.info(
+                System.lineSeparator() + System.lineSeparator() +
+                "-------------------------------------------------------" + System.lineSeparator() +
+                "  JDA Utils by VadamDev (https://github.com/VadamDev)" + System.lineSeparator() +
+                System.lineSeparator() +
+                "      Bot Class: " + jdaBot.getClass().getName() + "     " + System.lineSeparator() +
+                "-------------------------------------------------------" +
+                System.lineSeparator()
+        );
     }
 
     public void start() throws InterruptedException {
-        logger.info("Starting " + jdaBot. getClass().getSimpleName() + "...");
+        logger.info("Starting " + jdaBot.getClass().getSimpleName() + "...");
         jdaBot.setup();
 
-        Scanner scanner = new Scanner(System.in);
+        final Scanner scanner = new Scanner(System.in);
         do {
             try {
-                String str = scanner.next();
+                final String str = scanner.next();
 
-                commands.entrySet().stream()
+                Optional<Map.Entry<String, Consumer<T>>> t = commands.entrySet().stream()
                         .filter(entry -> entry.getKey().equals(str))
-                        .findFirst().ifPresent(entry -> entry.getValue().accept(jdaBot));
+                        .findFirst();
+
+                if(t.isPresent())
+                    t.get().getValue().accept(jdaBot);
+                else
+                    logger.info("Unknown command ! Type help to see a list of all available commands.");
             }catch(Exception ignored) {}
         }while(scanner.hasNext());
     }
@@ -65,7 +79,7 @@ public class JDAApplication<T extends JDABot> {
 
     private void addDefaultCommands() {
         commands.put("help", jdaBot -> {
-            logger.info("Current available commands:");
+            logger.info("Available commands:");
 
             commands.keySet().stream()
                     .filter(command -> !command.equals("help"))

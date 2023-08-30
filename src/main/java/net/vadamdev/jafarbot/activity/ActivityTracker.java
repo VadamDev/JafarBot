@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
  * @author VadamDev
  * @since 22/06/2023
  */
-public class ActivityTracker {
+public final class ActivityTracker {
     private final JDA jda;
     private final ScheduledExecutorService scheduledExecutorService;
 
@@ -68,14 +68,12 @@ public class ActivityTracker {
 
             if(currentDate.before(calendar.getTime()))
                 return true;
-        }
-
-        return false;*/
+        }*/
 
         return false;
     }
 
-    public void onDisable() {
+    public void shutdown() {
         scheduledExecutorService.shutdownNow();
     }
 

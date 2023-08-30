@@ -6,10 +6,12 @@ import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
+import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import net.vadamdev.jafarbot.activity.ActivityTracker;
 import net.vadamdev.jafarbot.captaincy.CaptainedBoatManager;
-import net.vadamdev.jafarbot.channelcreator.ChannelCreator;
 import net.vadamdev.jafarbot.channelcreator.ChannelCreatorManager;
+import net.vadamdev.jafarbot.channelcreator.impl.BoatChannelCreator;
+import net.vadamdev.jafarbot.channelcreator.impl.GamesChannelCreator;
 import net.vadamdev.jafarbot.commands.*;
 import net.vadamdev.jafarbot.config.MainConfig;
 import net.vadamdev.jafarbot.listeners.EventListener;
@@ -42,7 +44,7 @@ public class JafarBot extends JDABot implements IReloadable {
     private CaptainedBoatManager captainedBoatManager;
     private PlayerManager playerManager;
 
-    protected ActivityTracker activityTracker;
+    private ActivityTracker activityTracker;
 
     public JafarBot() {
         super(BotToken.RELEASE.getToken(), "!");
@@ -104,7 +106,7 @@ public class JafarBot extends JDABot implements IReloadable {
 
     @Override
     public void onDisable() {
-        activityTracker.onDisable();
+        activityTracker.shutdown();
         profileManager.onDisable();
     }
 
@@ -148,27 +150,19 @@ public class JafarBot extends JDABot implements IReloadable {
     }
 
     private void registerChannelCreators() {
-        channelCreatorManager.registerChannelCreator(new ChannelCreator(
-                mainConfig.BOAT_CREATOR,
-                mainConfig.BOAT_CREATOR_CATEGORY,
-                "\uD83D\uDD0A┃Bateau #%index%"
-        ));
-
-        channelCreatorManager.registerChannelCreator(new ChannelCreator(
-                mainConfig.GAMES_CREATOR,
-                mainConfig.GAMES_CREATOR_CATEGORY,
-                "\uD83D\uDD0A┃Vocal #%index%"
-        ));
+        channelCreatorManager.registerChannelCreator(new BoatChannelCreator());
+        channelCreatorManager.registerChannelCreator(new GamesChannelCreator());
     }
 
     @Nonnull
     @Override
-    protected JDABuilder initBuilder(JDABuilder jdaBuilder) {
+    protected JDABuilder computeBuilder(JDABuilder jdaBuilder) {
         return jdaBuilder
                 .setAutoReconnect(true)
                 .setChunkingFilter(ChunkingFilter.ALL)
                 .setMemberCachePolicy(MemberCachePolicy.ALL)
-                .enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.MESSAGE_CONTENT);
+                .enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_PRESENCES)
+                .enableCache(CacheFlag.ACTIVITY);
     }
 
     public ProfileManager getProfileManager() {
@@ -189,5 +183,9 @@ public class JafarBot extends JDABot implements IReloadable {
 
     public PlayerManager getPlayerManager() {
         return playerManager;
+    }
+
+    public ActivityTracker getActivityTracker() {
+        return activityTracker;
     }
 }

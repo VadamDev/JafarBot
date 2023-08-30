@@ -6,8 +6,11 @@ import net.vadamdev.jdautils.JDAUtils;
 import net.vadamdev.jdautils.commands.Command;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
+ * Represents a JDA bot
+ *
  * @author VadamDev
  * @since 30/03/2023
  */
@@ -20,8 +23,8 @@ public class JDABot {
 
     private String AVATAR_URL;
 
-    public JDABot(@Nonnull String token, @Nonnull String commandPrefix) {
-        this.jdaBuilder = initBuilder(JDABuilder.createDefault(token));
+    public JDABot(@Nonnull String token, @Nullable String commandPrefix) {
+        this.jdaBuilder = computeBuilder(JDABuilder.createDefault(token));
         this.commandPrefix = commandPrefix;
     }
 
@@ -62,7 +65,7 @@ public class JDABot {
      */
 
     @Nonnull
-    protected JDABuilder initBuilder(JDABuilder jdaBuilder) {
+    protected JDABuilder computeBuilder(JDABuilder jdaBuilder) {
         return jdaBuilder;
     }
 

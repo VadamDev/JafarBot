@@ -40,7 +40,10 @@ public class InfoCommand extends Command implements ISlashCommand {
 
                 break;
             case "top":
-                event.replyEmbeds(createUserTop(event.getGuild(), event.getOption("everyone", false, OptionMapping::getAsBoolean))).queue();
+                final int limit = event.getOption("limit", 15, OptionMapping::getAsInt);
+                final boolean everyone = event.getOption("everyone", false, OptionMapping::getAsBoolean);
+
+                event.replyEmbeds(createUserTop(event.getGuild(), limit, everyone)).queue();
 
                 break;
             default:
@@ -86,7 +89,7 @@ public class InfoCommand extends Command implements ISlashCommand {
                 .setFooter("JafarBot", Main.jafarBot.getAvatarURL()).build();
     }
 
-    private MessageEmbed createUserTop(Guild guild, boolean everyone) {
+    private MessageEmbed createUserTop(Guild guild, int limit, boolean everyone) {
         StringBuilder description = new StringBuilder();
 
         Main.jafarBot.getProfileManager().getProfiles().stream()
@@ -97,7 +100,7 @@ public class InfoCommand extends Command implements ISlashCommand {
                 })
                 .filter(profile -> everyone || guild.getMemberById(profile.getUserId()).getRoles().stream().noneMatch(role -> role.getId().equals(Main.jafarBot.mainConfig.FRIEND_ROLE)))
                 .sorted(Comparator.comparingLong(Profile::getLastActivity))
-                .limit(15)
+                .limit(limit)
                 .forEach(profile -> {
                     Member member = guild.getMemberById(profile.getUserId());
                     description.append("- " + member.getAsMention() + (ActivityTracker.hasInactiveRole(member, Main.jafarBot.mainConfig.STUCKED_ROLE) ? " (\uD83D\uDCA4)" : "") + " (<t:" + profile.getLastActivity() / 1000 + ":R>)\n");
@@ -111,8 +114,9 @@ public class InfoCommand extends Command implements ISlashCommand {
                 .setFooter("JafarBot", Main.jafarBot.getAvatarURL()).build();
     }
 
+    @Nonnull
     @Override
-    public @Nonnull SlashCommandData createSlashCommand() {
+    public SlashCommandData createSlashCommand() {
         return Commands.slash(name, "Commande destiné à récupéré des informations sur les membres du discord")
                 .addSubcommands(
                         new SubcommandData("get", "Permet de connaitre l'activité d'un membre du discord")
@@ -122,6 +126,9 @@ public class InfoCommand extends Command implements ISlashCommand {
                                 ),
                         new SubcommandData("top", "Renvois un leaderboard des personnes les plus inactives du discord")
                                 .addOptions(
+                                        new OptionData(OptionType.INTEGER, "limit", "Définie la taille maximale du TOP")
+                                                .setMinValue(5)
+                                                .setMaxValue(50),
                                         new OptionData(OptionType.BOOLEAN, "everyone", "Mettez la valeur sur TRUE si vous souhaitez que même les ADJ soit compté dans le leaderboard")
                                 )
                 );

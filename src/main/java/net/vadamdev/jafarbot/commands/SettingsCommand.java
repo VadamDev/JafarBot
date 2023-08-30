@@ -83,8 +83,9 @@ public class SettingsCommand extends Command implements ISlashCommand {
         }
     }
 
+    @Nonnull
     @Override
-    public @Nonnull SlashCommandData createSlashCommand() {
+    public SlashCommandData createSlashCommand() {
         return Commands.slash(name, "Change la valeur de n'importe quel variable dans la config")
                 .addOptions(
                         new OptionData(OptionType.STRING, "fieldname", "Nom de la variable")

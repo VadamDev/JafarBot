@@ -28,7 +28,7 @@ public abstract class Command {
         this.aliases = aliases;
     }
 
-    public void setPermission(Permission permission) {
+    public void setPermission(@Nullable Permission permission) {
         this.permission = permission;
     }
 

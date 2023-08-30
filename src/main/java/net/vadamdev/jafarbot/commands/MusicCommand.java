@@ -21,8 +21,8 @@ import net.vadamdev.jafarbot.music.TrackScheduler;
 import net.vadamdev.jdautils.commands.Command;
 import net.vadamdev.jdautils.commands.ISlashCommand;
 import net.vadamdev.jdautils.commands.data.ICommandData;
-import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
 import java.awt.*;
 import java.net.URI;
 import java.util.ArrayList;
@@ -40,7 +40,7 @@ public class MusicCommand extends Command implements ISlashCommand {
     }
 
     @Override
-    public void execute(@NotNull Member sender, @NotNull ICommandData commandData) {
+    public void execute(@Nonnull Member sender, @Nonnull ICommandData commandData) {
         final SlashCommandInteractionEvent event = ((net.vadamdev.jdautils.commands.data.impl.SlashCommandData) commandData).getEvent();
 
         final GuildVoiceState senderVoiceState = sender.getVoiceState();
@@ -232,7 +232,7 @@ public class MusicCommand extends Command implements ISlashCommand {
         }
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public SlashCommandData createSlashCommand() {
         return Commands.slash(name, "PLACEHOLDER")

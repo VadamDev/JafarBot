@@ -13,11 +13,11 @@ public class Main {
     public static final JafarBot jafarBot = new JafarBot();
 
     public static void main(String[] args) throws InterruptedException {
-        JDAApplication<JafarBot> application = new JDAApplication<>(jafarBot, logger);
+        final JDAApplication<JafarBot> application = new JDAApplication<>(jafarBot, logger);
 
         application.registerCommand("profiles-serialize", bot -> bot.getProfileManager().serialize());
         application.registerCommand("profiles-unserialize", bot -> bot.getProfileManager().unserialize());
-        application.registerCommand("check-activity", bot -> bot.activityTracker.checkServerActivity());
+        application.registerCommand("check-activity", bot -> bot.getActivityTracker().checkServerActivity());
 
         application.start();
     }

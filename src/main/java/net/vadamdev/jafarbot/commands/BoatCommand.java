@@ -84,8 +84,9 @@ public class BoatCommand extends Command implements ISlashCommand {
         }
     }
 
+    @Nonnull
     @Override
-    public @Nonnull SlashCommandData createSlashCommand() {
+    public SlashCommandData createSlashCommand() {
         return Commands.slash(name, "Commande dédié à la gestion des bateaux capitainé")
                 .addSubcommands(
                         new SubcommandData("create", "Créé un nouveau bateau")

@@ -9,6 +9,9 @@ import java.lang.reflect.Field;
 import java.util.Arrays;
 
 /**
+ * Represents a configuration file.
+ * <br>Every primitive field annotated with {@link ConfigValue} will be configurable in the associated yml file.
+ *
  * @author VadamDev
  * @since 18/10/2022
  */
@@ -23,6 +26,13 @@ public class Configuration {
         return yamlFile;
     }
 
+    /**
+     * Change the provided value in the associated yml and field.
+     * <br>Use the save() function to save the changes in the yml file.
+     *
+     * @param name Field name
+     * @param value New value
+     */
     public void setValue(@Nonnull String name, Object value) {
         try {
             final Field field = getClass().getField(name);
@@ -39,6 +49,12 @@ public class Configuration {
         }
     }
 
+    /**
+     * Checks if the provided fieldName exists.
+     *
+     * @param fieldName Field name to check
+     * @return True if the provided field name is a field
+     */
     public boolean hasField(@Nonnull String fieldName) {
         try {
             return Arrays.stream(getClass().getField(fieldName).getAnnotations())
@@ -48,6 +64,11 @@ public class Configuration {
         }
     }
 
+    /**
+     * Save current changes in the yml file.
+     *
+     * @throws IOException
+     */
     public void save() throws IOException {
         yamlFile.save();
     }

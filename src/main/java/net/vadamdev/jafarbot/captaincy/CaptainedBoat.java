@@ -30,24 +30,22 @@ public class CaptainedBoat {
     private String channelId, currentName, configMessageId;
     private boolean locked, heavyLocked;
 
-    public CaptainedBoat(String ownerId) {
+    CaptainedBoat(String ownerId) {
         this(ownerId, new EnumMap<>(BoatType.class), BoatType.GALLEON, false);
     }
 
     CaptainedBoat(String ownerId, EnumMap<BoatType, String> names, BoatType preferredBoatType, boolean defaultLocked) {
         this.ownerId = ownerId;
+        this.names = names;
         this.preferredBoatType = preferredBoatType;
         this.defaultLocked = defaultLocked;
-
-        this.names = names;
-        this.names.putIfAbsent(BoatType.SLOOP, null);
-        this.names.putIfAbsent(BoatType.BRIGANTINE, null);
-        this.names.putIfAbsent(BoatType.GALLEON, null);
     }
 
     void createChannel(Guild guild) {
+        final Member owner = guild.getMemberById(ownerId);
+
         if(isAlive()) {
-            guild.moveVoiceMember(guild.getMemberById(ownerId), guild.getVoiceChannelById(channelId)).queue();
+            guild.moveVoiceMember(owner, guild.getVoiceChannelById(channelId)).queue();
             return;
         }
 
@@ -56,17 +54,19 @@ public class CaptainedBoat {
             channelId = channel.getId();
 
             updateOrCreateConfigMessage(guild);
-            guild.moveVoiceMember(guild.getMemberById(ownerId), channel).queue();
+            guild.moveVoiceMember(owner, channel).queue();
         });
     }
 
-    void deleteChannel(Guild guild) {
+    void deleteChannel(Guild guild, boolean skipDelete) {
         if(!isAlive())
             return;
 
-        final VoiceChannel voiceChannel = guild.getVoiceChannelById(channelId);
-        if(voiceChannel != null)
-            voiceChannel.delete().queue();
+        if(!skipDelete) {
+            final VoiceChannel voiceChannel = guild.getVoiceChannelById(channelId);
+            if(voiceChannel != null)
+                voiceChannel.delete().queue();
+        }
 
         channelId = null;
         currentName = null;
@@ -81,23 +81,20 @@ public class CaptainedBoat {
             return;
 
         if(locked && !this.locked) {
-            final int memberSize = voiceChannel.getMembers().size();
-            voiceChannel.getManager().setUserLimit(memberSize == 1 ? 2 : Math.min(memberSize, 4)).queue(channel -> updateOrCreateConfigMessage(guild));
-
             if(heavy)
                 heavyLocked = true;
+
+            final int memberSize = voiceChannel.getMembers().size();
+            voiceChannel.getManager().setUserLimit(memberSize == 1 ? 2 : Math.min(memberSize, 4)).queue(channel -> updateOrCreateConfigMessage(guild));
         }else if(!locked && this.locked) {
-            voiceChannel.getManager().setUserLimit(0).queue(channel -> updateOrCreateConfigMessage(guild));
             heavyLocked = false;
+            voiceChannel.getManager().setUserLimit(0).queue(channel -> updateOrCreateConfigMessage(guild));
         }
 
         this.locked = locked;
     }
 
     private void updateOrCreateConfigMessage(Guild guild) {
-        if(channelId == null)
-            return;
-
         final VoiceChannel voiceChannel = guild.getVoiceChannelById(channelId);
         if(voiceChannel == null)
             return;
@@ -106,29 +103,29 @@ public class CaptainedBoat {
 
         if(configMessageId != null) {
             voiceChannel.retrieveMessageById(configMessageId).queue(message -> {
-                final Button forceLockButton = Button.secondary("JafarBot-forceLock", Emoji.fromUnicode("⛔"));
+                final Button forceLockButton = Button.secondary("jafarBot-CaptainedBoat-ForceLock", Emoji.fromUnicode("⛔"));
 
                 message.editMessageEmbeds(createConfigMessage(owner.getUser())).setActionRow(
-                        Button.primary("JafarBot-lock", Emoji.fromUnicode(voiceChannel.getUserLimit() != 0 ? "\uD83D\uDD13" : "\uD83D\uDD12")),
+                        Button.primary("jafarBot-CaptainedBoat-Lock", Emoji.fromUnicode(voiceChannel.getUserLimit() != 0 ? "\uD83D\uDD13" : "\uD83D\uDD12")),
                         owner.hasPermission(Permission.ADMINISTRATOR) && !locked && !heavyLocked ? forceLockButton : forceLockButton.asDisabled(),
-                        Button.danger("JafarBot-deleteBoat", Emoji.fromUnicode("\uD83D\uDDD1️"))
+                        Button.danger("jafarBot-CaptainedBoat-Boat", Emoji.fromUnicode("\uD83D\uDDD1️"))
                 ).queue();
             });
         }else {
             voiceChannel.sendMessageEmbeds(createTypeConfigMessage())
-                    .setActionRow(StringSelectMenu.create("JafarBot-ChooseBoatType").addOptions(getBoatNameOptions()).build()).queue();
+                    .setActionRow(StringSelectMenu.create("jafarBot-CaptainedBoat-ChooseBoatType").addOptions(getBoatNameOptions()).build()).queue();
 
-            final Button forceLockButton = Button.secondary("JafarBot-forceLock", Emoji.fromUnicode("⛔"));
+            final Button forceLockButton = Button.secondary("jafarBot-CaptainedBoat-ForceLock", Emoji.fromUnicode("⛔"));
             voiceChannel.sendMessageEmbeds(createConfigMessage(owner.getUser())).setActionRow(
-                    Button.primary("JafarBot-lock", Emoji.fromUnicode(voiceChannel.getUserLimit() != 0 ? "\uD83D\uDD13" : "\uD83D\uDD12")),
+                    Button.primary("jafarBot-CaptainedBoat-Lock", Emoji.fromUnicode(voiceChannel.getUserLimit() != 0 ? "\uD83D\uDD13" : "\uD83D\uDD12")),
                     owner.hasPermission(Permission.ADMINISTRATOR) && !locked && !heavyLocked ? forceLockButton : forceLockButton.asDisabled(),
-                    Button.danger("JafarBot-deleteBoat", Emoji.fromUnicode("\uD83D\uDDD1️"))
+                    Button.danger("jafarBot-CaptainedBoat-Boat", Emoji.fromUnicode("\uD83D\uDDD1️"))
             ).queue(message -> configMessageId = message.getId());
         }
     }
 
     void setNameByBoatType(Guild guild, BoatType boatType) {
-        if(!isAlive() || names.get(boatType) == null)
+        if(!isAlive() || !names.containsKey(boatType))
             return;
 
         currentName = names.get(boatType);
@@ -161,7 +158,7 @@ public class CaptainedBoat {
     }
 
     private String getNameByPreference() {
-        if(preferredBoatType != null && names.get(preferredBoatType) != null)
+        if(preferredBoatType != null && names.containsKey(preferredBoatType))
             return names.get(preferredBoatType);
 
         final Optional<Map.Entry<BoatType, String>> optional = names.entrySet().stream().filter(entry -> entry.getValue() != null).findFirst();
@@ -175,7 +172,7 @@ public class CaptainedBoat {
         final List<SelectOption> options = new ArrayList<>();
 
         for(BoatType boatType : BoatType.values()) {
-            if(names.get(boatType) == null)
+            if(!names.containsKey(boatType))
                 continue;
 
             options.add(SelectOption.of(boatType.getDisplayName(), boatType.name())
@@ -212,7 +209,10 @@ public class CaptainedBoat {
     }
 
     public void setName(@Nonnull BoatType boatType, String name) {
-        names.put(boatType, name);
+        if(name == null)
+            names.remove(boatType);
+        else
+            names.put(boatType, name);
     }
 
     public void setPreferredBoatType(@Nullable BoatType preferredBoatType) {
