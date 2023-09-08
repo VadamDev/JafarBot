@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.entities.Role;
 import net.vadamdev.jafarbot.Main;
 import net.vadamdev.jafarbot.profile.Profile;
 
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -54,23 +55,13 @@ public final class ActivityTracker {
     }
 
     private boolean shouldBeInactive(Profile profile, Member member, Date currentDate) {
-        /*if(member.getRoles().stream().anyMatch(r -> r.getId().equals(Main.jafarBot.mainConfig.FRIEND_ROLE)))
+        if(member.getRoles().stream().anyMatch(r -> r.getId().equals(Main.jafarBot.mainConfig.FRIEND_ROLE)))
             return false;
 
-        for (int i = 0; i < profile.getActivityData().length; i++) {
-            final long lastActivity = profile.getLastActivity(i);
-            if(lastActivity == 0)
-                continue;
+        Date date = Date.from(new Date(profile.getLastActivity()).toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime()
+                .plusDays(14).atZone(ZoneId.systemDefault()).toInstant());
 
-            final Calendar calendar = Calendar.getInstance();
-            calendar.setTime(new Date(lastActivity));
-            calendar.add(Calendar.DAY_OF_MONTH, 14);
-
-            if(currentDate.before(calendar.getTime()))
-                return true;
-        }*/
-
-        return false;
+        return currentDate.after(date);
     }
 
     public void shutdown() {

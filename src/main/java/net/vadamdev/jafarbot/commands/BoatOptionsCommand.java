@@ -15,7 +15,6 @@ import net.vadamdev.jafarbot.captaincy.CaptainedBoat;
 import net.vadamdev.jdautils.commands.Command;
 import net.vadamdev.jdautils.commands.ISlashCommand;
 import net.vadamdev.jdautils.commands.data.ICommandData;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.awt.*;

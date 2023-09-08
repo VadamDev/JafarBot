@@ -16,7 +16,6 @@ import net.vadamdev.jafarbot.channelcreator.ChannelCreator;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.naming.NameParser;
 import java.util.List;
 import java.util.stream.Collectors;
 
