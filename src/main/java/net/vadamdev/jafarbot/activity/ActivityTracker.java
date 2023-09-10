@@ -58,7 +58,11 @@ public final class ActivityTracker {
         if(member.getRoles().stream().anyMatch(r -> r.getId().equals(Main.jafarBot.mainConfig.FRIEND_ROLE)))
             return false;
 
-        Date date = Date.from(new Date(profile.getLastActivity()).toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime()
+        final long lastActivity = profile.getLastActivity();
+        if(lastActivity == 0)
+            return false;
+
+        Date date = Date.from(new Date(lastActivity).toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime()
                 .plusDays(14).atZone(ZoneId.systemDefault()).toInstant());
 
         return currentDate.after(date);

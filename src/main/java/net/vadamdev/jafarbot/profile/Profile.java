@@ -22,6 +22,11 @@ public class Profile implements Serializable {
         this.userId = userId;
 
         this.activityData = new long[ACTIVITY_BUFFER_SIZE][2];
+
+        long currentTime = System.currentTimeMillis();
+        this.activityData[0][0] = currentTime;
+        this.activityData[0][1] = currentTime;
+
         this.connectionTime = 0;
 
         this.captainedBoat = null;
@@ -60,11 +65,7 @@ public class Profile implements Serializable {
     }
 
     public long getLastActivity() {
-        return getLastActivity(0);
-    }
-
-    public long getLastActivity(int index) {
-        return Math.max(activityData[index][0], activityData[index][1]);
+        return Math.max(activityData[0][0], activityData[0][1]);
     }
 
     public long[][] getActivityData() {
