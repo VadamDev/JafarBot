@@ -32,7 +32,7 @@ public class CreatedChannel {
     protected void onChannelCreation(VoiceChannel voiceChannel, Member owner) {}
 
     public boolean isOwner(String memberId, @Nullable IReplyCallback replyCallback) {
-        boolean isOwner = memberId.equals(ownerId);
+        final boolean isOwner = memberId.equals(ownerId);
 
         if(!isOwner && replyCallback != null)
             replyCallback.replyEmbeds(NOT_OWNER_MESSAGE).setEphemeral(true).queue();

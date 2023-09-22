@@ -22,10 +22,6 @@ public class Configuration {
         this.yamlFile = new YamlFile(filePath);
     }
 
-    public YamlFile getYamlFile() {
-        return yamlFile;
-    }
-
     /**
      * Change the provided value in the associated yml and field.
      * <br>Use the save() function to save the changes in the yml file.
@@ -71,5 +67,9 @@ public class Configuration {
      */
     public void save() throws IOException {
         yamlFile.save();
+    }
+
+    public YamlFile getYamlFile() {
+        return yamlFile;
     }
 }

@@ -38,11 +38,9 @@ public abstract class Command {
     }
 
     boolean check(String str) {
-        if(aliases.length != 0) {
-            for (String alias : aliases) {
-                if(alias.equalsIgnoreCase(str))
-                    return true;
-            }
+        for(String alias : aliases) {
+            if(alias.equalsIgnoreCase(str))
+                return true;
         }
 
         return name.equalsIgnoreCase(str);

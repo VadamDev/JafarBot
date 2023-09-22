@@ -32,40 +32,43 @@ public class SettingsCommand extends Command implements ISlashCommand {
             .setFooter("JafarBot", Main.jafarBot.getAvatarURL())
             .setColor(Color.ORANGE).build();
 
+    private final MainConfig mainConfig;
+
     public SettingsCommand() {
         super("settings");
         setPermission(Permission.ADMINISTRATOR);
+
+        this.mainConfig = Main.jafarBot.mainConfig;
     }
 
     @Override
     public void execute(@Nonnull Member sender, @Nonnull ICommandData commandData) {
-        MainConfig mainConfig = Main.jafarBot.mainConfig;
-
         String fieldName = null, value = null;
 
         if(commandData.getType().equals(ICommandData.Type.SLASH)) {
-            SlashCommandInteractionEvent event = ((net.vadamdev.jdautils.commands.data.impl.SlashCommandData) commandData).getEvent();
+            final SlashCommandInteractionEvent event = ((net.vadamdev.jdautils.commands.data.impl.SlashCommandData) commandData).getEvent();
 
             fieldName = event.getOption("fieldname").getAsString();
             value = event.getOption("value").getAsString();
 
             event.replyEmbeds(SUCCESS_MESSAGE).queue();
         }else if(commandData.getType().equals(ICommandData.Type.TEXT)) {
-            TextCommandData textCommandData = (TextCommandData) commandData;
+            final TextCommandData textCommandData = (TextCommandData) commandData;
 
-            String[] args = textCommandData.getArgs();
-            Message message = textCommandData.getEvent().getMessage();
+            final String[] args = textCommandData.getArgs();
+            final Message message = textCommandData.getEvent().getMessage();
 
-            if(!mainConfig.hasField(args[0]) || args.length < 2) {
+            if(args.length < 2 || !mainConfig.hasField(args[0])) {
                 message.replyEmbeds(new EmbedBuilder()
                         .setTitle("Paramètres - Erreur")
                         .setDescription("Une erreur est survenue.\nUtilisez la commande ``!settings <fieldName> <value>``")
                         .setFooter("JafarBot", Main.jafarBot.getAvatarURL())
                         .setColor(Color.RED).build()).queue();
+
                 return;
             }
 
-            StringBuilder builder = new StringBuilder();
+            final StringBuilder builder = new StringBuilder();
             for (int i = 1; i < args.length; i++)
                 builder.append(args[i] + (i < args.length - 1 ? " " : ""));
 

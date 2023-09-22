@@ -47,7 +47,7 @@ public class TrackScheduler extends AudioEventAdapter {
 
     public void nextTrack(int index) {
         if(queue.isEmpty()) {
-            GuildMusicManager musicManager = Main.jafarBot.getPlayerManager().getMusicManager();
+            final GuildMusicManager musicManager = Main.jafarBot.getPlayerManager().getMusicManager();
 
             if(musicManager.getInterfaceMessage() != null) {
                 musicManager.getInterfaceMessage().delete().queue();

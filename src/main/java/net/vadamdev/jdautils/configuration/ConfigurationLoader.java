@@ -15,7 +15,6 @@ public final class ConfigurationLoader {
 
     public static void loadConfiguration(Configuration configuration) throws IOException, IllegalAccessException {
         final YamlFile yamlFile = configuration.getYamlFile();
-
         if(!yamlFile.exists())
             yamlFile.createNewFile();
 

@@ -40,8 +40,14 @@ public class MainConfig extends Configuration {
     @ConfigValue(path = "roles.member")
     public String MEMBER_ROLE = "ID_HERE";
 
+    @ConfigValue(path = "roles.retired")
+    public String RETIRED_ROLE = "ID_HERE";
+
     @ConfigValue(path = "roles.friend")
     public String FRIEND_ROLE = "ID_HERE";
+
+    @ConfigValue(path = "roles.inactive")
+    public String INACTIVE_ROLE = "ID_HERE";
 
     @ConfigValue(path = "roles.separatorOne")
     public String SEPARATOR_1_ROLE = "ID_HERE";
@@ -51,33 +57,6 @@ public class MainConfig extends Configuration {
 
     @ConfigValue(path = "roles.separatorThree")
     public String SEPARATOR_3_ROLE = "ID_HERE";
-
-    @ConfigValue(path = "roles.pvp")
-    public String PVP_ROLE = "ID_HERE";
-
-    @ConfigValue(path = "roles.pve")
-    public String PVE_ROLE = "ID_HERE";
-
-    @ConfigValue(path = "roles.tdm")
-    public String TDM_ROLE = "ID_HERE";
-
-    @ConfigValue(path = "roles.helm")
-    public String HELM_ROLE = "ID_HERE";
-
-    @ConfigValue(path = "roles.flex")
-    public String FLEX_ROLE = "ID_HERE";
-
-    @ConfigValue(path = "roles.main")
-    public String MAIN_ROLE = "ID_HERE";
-
-    @ConfigValue(path = "roles.matesearch")
-    public String MATE_SEARCH_ROLE = "ID_HERE";
-
-    @ConfigValue(path = "roles.carpenter")
-    public String CARPENTER_ROLE = "ID_HERE";
-
-    @ConfigValue(path = "roles.stucked")
-    public String STUCKED_ROLE = "ID_HERE";
 
     /*
        Channel Creator

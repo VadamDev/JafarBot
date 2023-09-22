@@ -39,7 +39,7 @@ public class BoatCommand extends Command implements ISlashCommand {
                 final BoatType boatType = BoatType.valueOf(event.getOption("type").getAsString());
                 final String formattedName = event.getOption("emoji", "❔", OptionMapping::getAsString) + "┃" + event.getOption("name").getAsString();
 
-                CaptainedBoat captainedBoat = Main.jafarBot.getCaptainedBoatManager().getCaptainedBoatByUser(target.getId());
+                final CaptainedBoat captainedBoat = Main.jafarBot.getCaptainedBoatManager().getCaptainedBoatByUser(target.getId());
                 captainedBoat.setName(boatType, formattedName);
 
                 event.replyEmbeds(new EmbedBuilder()

@@ -23,7 +23,7 @@ public class Profile implements Serializable {
 
         this.activityData = new long[ACTIVITY_BUFFER_SIZE][2];
 
-        long currentTime = System.currentTimeMillis();
+        final long currentTime = System.currentTimeMillis();
         this.activityData[0][0] = currentTime;
         this.activityData[0][1] = currentTime;
 
@@ -54,7 +54,7 @@ public class Profile implements Serializable {
             return;
         }
 
-        long[][] newData = new long[ACTIVITY_BUFFER_SIZE][2];
+        final long[][] newData = new long[ACTIVITY_BUFFER_SIZE][2];
         newData[0] = new long[]{connectionTime, deconnectionTime};
 
         for(int i = 1; i < activityData.length; i++)

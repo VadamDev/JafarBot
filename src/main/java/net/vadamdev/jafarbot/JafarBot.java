@@ -2,7 +2,6 @@ package net.vadamdev.jafarbot;
 
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
@@ -17,9 +16,6 @@ import net.vadamdev.jafarbot.config.MainConfig;
 import net.vadamdev.jafarbot.listeners.EventListener;
 import net.vadamdev.jafarbot.music.PlayerManager;
 import net.vadamdev.jafarbot.profile.ProfileManager;
-import net.vadamdev.jafarbot.rolereaction.RoleOption;
-import net.vadamdev.jafarbot.rolereaction.RoleReaction;
-import net.vadamdev.jafarbot.rolereaction.RoleReactionManager;
 import net.vadamdev.jafarbot.utils.Utils;
 import net.vadamdev.jdautils.application.IReloadable;
 import net.vadamdev.jdautils.application.JDABot;
@@ -39,7 +35,6 @@ public class JafarBot extends JDABot implements IReloadable {
     private File profilesFile;
 
     private ProfileManager profileManager;
-    private RoleReactionManager roleReactionManager;
     private ChannelCreatorManager channelCreatorManager;
     private CaptainedBoatManager captainedBoatManager;
     private PlayerManager playerManager;
@@ -60,9 +55,6 @@ public class JafarBot extends JDABot implements IReloadable {
 
         profileManager = new ProfileManager(profilesFile);
 
-        roleReactionManager = new RoleReactionManager();
-        registerRolereactions();
-
         channelCreatorManager = new ChannelCreatorManager();
         registerChannelCreators();
 
@@ -78,7 +70,6 @@ public class JafarBot extends JDABot implements IReloadable {
 
         registerCommands(
                 new SettingsCommand(),
-                new RolereactionCommand(),
                 new ClearCommand(),
                 new InfoCommand(),
                 new ActivityCommand(),
@@ -124,31 +115,6 @@ public class JafarBot extends JDABot implements IReloadable {
         }
     }
 
-    private void registerRolereactions() {
-        roleReactionManager.addRoleReaction(new RoleReaction(
-                "job",
-                "Postes",
-                RoleOption.of(mainConfig.HELM_ROLE, Emoji.fromUnicode("⛵")),
-                RoleOption.of(mainConfig.MAIN_ROLE, Emoji.fromUnicode("\uD83D\uDCA3")),
-                RoleOption.of(mainConfig.FLEX_ROLE, Emoji.fromUnicode("⚔️")),
-                RoleOption.of(mainConfig.CARPENTER_ROLE, Emoji.fromUnicode("\uD83D\uDD28"))
-        ));
-
-        roleReactionManager.addRoleReaction(new RoleReaction(
-                "gameplay",
-                "Gameplay",
-                RoleOption.of(mainConfig.PVP_ROLE, Emoji.fromUnicode("☠️")),
-                RoleOption.of(mainConfig.PVE_ROLE, Emoji.fromUnicode("\uD83D\uDCB5")),
-                RoleOption.of(mainConfig.TDM_ROLE, Emoji.fromUnicode("\uD83D\uDD2B"))
-        ));
-
-        roleReactionManager.addRoleReaction(new RoleReaction(
-                "notifications",
-                "Notifications",
-                RoleOption.of(mainConfig.MATE_SEARCH_ROLE, Emoji.fromUnicode("\uD83D\uDCE3"))
-        ));
-    }
-
     private void registerChannelCreators() {
         channelCreatorManager.registerChannelCreator(new BoatChannelCreator());
         channelCreatorManager.registerChannelCreator(new GamesChannelCreator());
@@ -167,10 +133,6 @@ public class JafarBot extends JDABot implements IReloadable {
 
     public ProfileManager getProfileManager() {
         return profileManager;
-    }
-
-    public RoleReactionManager getRoleReactionManager() {
-        return roleReactionManager;
     }
 
     public ChannelCreatorManager getChannelCreatorManager() {

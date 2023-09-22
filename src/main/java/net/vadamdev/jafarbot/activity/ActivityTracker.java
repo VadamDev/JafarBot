@@ -5,6 +5,7 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.vadamdev.jafarbot.Main;
+import net.vadamdev.jafarbot.config.MainConfig;
 import net.vadamdev.jafarbot.profile.Profile;
 
 import java.time.ZoneId;
@@ -21,16 +22,20 @@ public final class ActivityTracker {
     private final JDA jda;
     private final ScheduledExecutorService scheduledExecutorService;
 
+    private final MainConfig mainConfig;
+
     public ActivityTracker(JDA jda) {
         this.jda = jda;
 
         this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
         this.scheduledExecutorService.scheduleAtFixedRate(this::checkServerActivity, 0, 6, TimeUnit.HOURS);
+
+        this.mainConfig = Main.jafarBot.mainConfig;
     }
 
     public void checkServerActivity() {
-        final Guild guild = jda.getGuildById(Main.jafarBot.mainConfig.GUILD_ID);
-        final Role inactiveRole = guild.getRoleById(Main.jafarBot.mainConfig.STUCKED_ROLE);
+        final Guild guild = jda.getGuildById(mainConfig.GUILD_ID);
+        final Role inactiveRole = guild.getRoleById(mainConfig.INACTIVE_ROLE);
         final Date currentDate = new Date();
 
         Main.jafarBot.getProfileManager().getProfiles().stream()
@@ -55,14 +60,14 @@ public final class ActivityTracker {
     }
 
     private boolean shouldBeInactive(Profile profile, Member member, Date currentDate) {
-        if(member.getRoles().stream().anyMatch(r -> r.getId().equals(Main.jafarBot.mainConfig.FRIEND_ROLE)))
+        if(hasRole(member, mainConfig.FRIEND_ROLE, mainConfig.RETIRED_ROLE))
             return false;
 
         final long lastActivity = profile.getLastActivity();
         if(lastActivity == 0)
             return false;
 
-        Date date = Date.from(new Date(lastActivity).toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime()
+        final Date date = Date.from(new Date(lastActivity).toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime()
                 .plusDays(14).atZone(ZoneId.systemDefault()).toInstant());
 
         return currentDate.after(date);
@@ -74,5 +79,17 @@ public final class ActivityTracker {
 
     public static boolean hasInactiveRole(Member member, String inactiveRoleId) {
         return member.getRoles().stream().anyMatch(r -> r.getId().equals(inactiveRoleId));
+    }
+
+    private boolean hasRole(Member member, String... roleIds) {
+        return member.getRoles().stream().anyMatch(role -> {
+            for (String id : roleIds) {
+                if(role.getId().equals(id)) {
+                    return true;
+                }
+            }
+
+            return false;
+        });
     }
 }

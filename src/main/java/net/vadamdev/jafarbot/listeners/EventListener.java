@@ -66,7 +66,6 @@ public class EventListener extends ListenerAdapter {
 
     @Override
     public void onButtonInteraction(@Nonnull ButtonInteractionEvent event) {
-        jafarBot.getRoleReactionManager().handleButtonEvent(event);
         jafarBot.getChannelCreatorManager().handleButtonInteractionEvent(event);
         jafarBot.getCaptainedBoatManager().handleButtonInteractionEvent(event);
     }

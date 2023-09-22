@@ -52,8 +52,7 @@ public class PlayerManager {
             public void playlistLoaded(AudioPlaylist playlist) {
                 final List<AudioTrack> tracks = playlist.getTracks();
 
-                StringBuilder description = new StringBuilder("Ajout de la playlist: **" + playlist.getName() + "**\n \n");
-
+                final StringBuilder description = new StringBuilder("Ajout de la playlist: **" + playlist.getName() + "**\n \n");
                 for(int i = 0; i < tracks.size(); i++) {
                     if(i >= 10) {
                         description.append("- ... (+" + (tracks.size() - 10) + ")\n");

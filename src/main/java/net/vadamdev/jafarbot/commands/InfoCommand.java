@@ -52,14 +52,14 @@ public class InfoCommand extends Command implements ISlashCommand {
     }
 
     private MessageEmbed getUserInfos(Member member) {
-        StringBuilder description = new StringBuilder("Activité Récente:\n");
+        final StringBuilder description = new StringBuilder("Activité Récente:\n");
         boolean flag = false;
 
-        Profile profile = Main.jafarBot.getProfileManager().getProfile(member.getId());
+        final Profile profile = Main.jafarBot.getProfileManager().getProfile(member.getId());
         if(profile.isInVocal()) {
             description.append("- Le <t:" + profile.getConnectionTime() / 1000 + ":f> *actuellement en vocal*\n \n");
             flag = true;
-        }else if(ActivityTracker.hasInactiveRole(member, Main.jafarBot.mainConfig.STUCKED_ROLE)) {
+        }else if(ActivityTracker.hasInactiveRole(member, Main.jafarBot.mainConfig.INACTIVE_ROLE)) {
             description.append("**Actuellement inactif**\n \n");
             flag = true;
         }
@@ -90,7 +90,7 @@ public class InfoCommand extends Command implements ISlashCommand {
     }
 
     private MessageEmbed createUserTop(Guild guild, int limit, boolean everyone) {
-        StringBuilder description = new StringBuilder();
+        final StringBuilder description = new StringBuilder();
 
         Main.jafarBot.getProfileManager().getProfiles().stream()
                 .filter(profile -> guild.getMemberById(profile.getUserId()) != null)
@@ -103,7 +103,7 @@ public class InfoCommand extends Command implements ISlashCommand {
                 .limit(limit)
                 .forEach(profile -> {
                     Member member = guild.getMemberById(profile.getUserId());
-                    description.append("- " + member.getAsMention() + (ActivityTracker.hasInactiveRole(member, Main.jafarBot.mainConfig.STUCKED_ROLE) ? " (\uD83D\uDCA4)" : "") + " (<t:" + profile.getLastActivity() / 1000 + ":R>)\n");
+                    description.append("- " + member.getAsMention() + (ActivityTracker.hasInactiveRole(member, Main.jafarBot.mainConfig.INACTIVE_ROLE) ? " (\uD83D\uDCA4)" : "") + " (<t:" + profile.getLastActivity() / 1000 + ":R>)\n");
                 });
 
         return new EmbedBuilder()

@@ -184,7 +184,9 @@ public final class CaptainedBoatManager {
     }
 
     public Optional<CaptainedBoat> getCaptainedBoatByChannel(String channelId) {
-        return getCaptainedBoats().stream()
+        return profileManager.getProfiles().stream()
+                .map(Profile::getCaptainedBoat)
+                .filter(Objects::nonNull)
                 .filter(CaptainedBoat::isAlive)
                 .filter(captainedBoat -> captainedBoat.getChannelId().equals(channelId))
                 .findFirst();
