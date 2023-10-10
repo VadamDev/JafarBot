@@ -11,6 +11,7 @@ import net.vadamdev.jafarbot.captaincy.CaptainedBoatManager;
 import net.vadamdev.jafarbot.channelcreator.ChannelCreatorManager;
 import net.vadamdev.jafarbot.channelcreator.impl.BoatChannelCreator;
 import net.vadamdev.jafarbot.channelcreator.impl.GamesChannelCreator;
+import net.vadamdev.jafarbot.channelcreator.impl.JafarMcChannelCreator;
 import net.vadamdev.jafarbot.commands.*;
 import net.vadamdev.jafarbot.config.MainConfig;
 import net.vadamdev.jafarbot.listeners.EventListener;
@@ -118,6 +119,7 @@ public class JafarBot extends JDABot implements IReloadable {
     private void registerChannelCreators() {
         channelCreatorManager.registerChannelCreator(new BoatChannelCreator());
         channelCreatorManager.registerChannelCreator(new GamesChannelCreator());
+        channelCreatorManager.registerChannelCreator(new JafarMcChannelCreator());
     }
 
     @Nonnull

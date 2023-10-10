@@ -5,6 +5,7 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -23,6 +24,7 @@ import javax.annotation.Nonnull;
 import java.awt.*;
 import java.time.Instant;
 import java.util.Comparator;
+import java.util.List;
 
 public class InfoCommand extends Command implements ISlashCommand {
     public InfoCommand() {
@@ -41,9 +43,10 @@ public class InfoCommand extends Command implements ISlashCommand {
                 break;
             case "top":
                 final int limit = event.getOption("limit", 15, OptionMapping::getAsInt);
-                final boolean everyone = event.getOption("everyone", false, OptionMapping::getAsBoolean);
+                final boolean showFriends = event.getOption("showfriends", false, OptionMapping::getAsBoolean);
+                final boolean showRetired = event.getOption("showretired", false, OptionMapping::getAsBoolean);
 
-                event.replyEmbeds(createUserTop(event.getGuild(), limit, everyone)).queue();
+                event.replyEmbeds(createUserTop(event.getGuild(), limit, showFriends, showRetired)).queue();
 
                 break;
             default:
@@ -89,7 +92,7 @@ public class InfoCommand extends Command implements ISlashCommand {
                 .setFooter("JafarBot", Main.jafarBot.getAvatarURL()).build();
     }
 
-    private MessageEmbed createUserTop(Guild guild, int limit, boolean everyone) {
+    private MessageEmbed createUserTop(Guild guild, int limit, boolean showFriends, boolean showRetired) {
         final StringBuilder description = new StringBuilder();
 
         Main.jafarBot.getProfileManager().getProfiles().stream()
@@ -98,7 +101,14 @@ public class InfoCommand extends Command implements ISlashCommand {
                     final long[] activityData = profile.getActivityData()[0];
                     return activityData[0] != 0 && activityData[1] != 0;
                 })
-                .filter(profile -> everyone || guild.getMemberById(profile.getUserId()).getRoles().stream().noneMatch(role -> role.getId().equals(Main.jafarBot.mainConfig.FRIEND_ROLE)))
+                .filter(profile -> {
+                    final List<Role> roles = guild.getMemberById(profile.getUserId()).getRoles();
+
+                    if((showFriends && roles.stream().anyMatch(role -> role.getId().equals(Main.jafarBot.mainConfig.FRIEND_ROLE)) || (showRetired && roles.stream().anyMatch(role -> role.getId().equals(Main.jafarBot.mainConfig.RETIRED_ROLE)))))
+                        return true;
+
+                    return roles.stream().noneMatch(role -> role.getId().equals(Main.jafarBot.mainConfig.FRIEND_ROLE) || role.getId().equals(Main.jafarBot.mainConfig.RETIRED_ROLE));
+                })
                 .sorted(Comparator.comparingLong(Profile::getLastActivity))
                 .limit(limit)
                 .forEach(profile -> {
@@ -129,7 +139,8 @@ public class InfoCommand extends Command implements ISlashCommand {
                                         new OptionData(OptionType.INTEGER, "limit", "Définie la taille maximale du TOP")
                                                 .setMinValue(5)
                                                 .setMaxValue(50),
-                                        new OptionData(OptionType.BOOLEAN, "everyone", "Mettez la valeur sur TRUE si vous souhaitez que même les ADJ soit compté dans le leaderboard")
+                                        new OptionData(OptionType.BOOLEAN, "showfriends", "Mettez la valeur sur TRUE si vous souhaitez que même les ADJ soit compté dans le leaderboard"),
+                                        new OptionData(OptionType.BOOLEAN, "showretired", "Mettez la valeur sur TRUE si vous souhaitez que même les RDLL soit compté dans le leaderboard")
                                 )
                 );
     }

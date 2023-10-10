@@ -74,6 +74,12 @@ public class MainConfig extends Configuration {
     @ConfigValue(path = "channelCreator.gamesCreatorCategory")
     public String GAMES_CREATOR_CATEGORY = "ID_HERE";
 
+    @ConfigValue(path = "channelCreator.jafarmcCreator")
+    public String JAFARMC_CREATOR = "ID_HERE";
+
+    @ConfigValue(path = "channelCreator.jafarmcCreatorCategory")
+    public String JAFARMC_CREATOR_CATEGORY = "ID_HERE";
+
     @ConfigValue(path = "channelCreator.captainedBoatCreator")
     public String CAPTAINED_BOAT_CREATOR = "ID_HERE";
 

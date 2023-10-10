@@ -5,7 +5,7 @@ plugins {
 }
 
 group 'net.vadamdev.jafarbot'
-version '2.3.3'
+version '2.3.4'
 mainClassName = "net.vadamdev.jafarbot.Main"
 
 repositories {
