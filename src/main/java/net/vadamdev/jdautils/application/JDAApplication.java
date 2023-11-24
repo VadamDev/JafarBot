@@ -69,8 +69,12 @@ public class JDAApplication<T extends JDABot> {
     }
 
     public void stop() {
+        logger.info("Disabling JDA Application...");
+
         jdaBot.onDisable();
         System.exit(0);
+
+        logger.info("The JDA Application has been disabled !");
     }
 
     public void registerCommand(String name, Consumer<T> command) {
