@@ -3,10 +3,10 @@ package net.vadamdev.jdautils.configuration;
 import org.simpleyaml.configuration.file.YamlFile;
 
 import javax.annotation.Nonnull;
+import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
-import java.util.Arrays;
 
 /**
  * Represents a configuration file.
@@ -16,14 +16,22 @@ import java.util.Arrays;
  * @since 18/10/2022
  */
 public class Configuration {
-    private final YamlFile yamlFile;
+    protected final YamlFile yamlFile;
 
-    public Configuration(@Nonnull String filePath) {
-        this.yamlFile = new YamlFile(filePath);
+    public Configuration(YamlFile yamlFile) {
+        this.yamlFile = yamlFile;
+    }
+
+    public Configuration(String path) {
+        this(new YamlFile(path));
+    }
+
+    public Configuration(File file) {
+        this(new YamlFile(file));
     }
 
     /**
-     * Change the provided value in the associated yml and field.
+     * Change the provided value in the yml and field.
      * <br>Use the save() function to save the changes in the yml file.
      *
      * @param name Field name
@@ -33,13 +41,12 @@ public class Configuration {
         try {
             final Field field = getClass().getField(name);
 
-            for (Annotation annotation : field.getAnnotations()) {
-                if(annotation instanceof ConfigValue) {
-                    field.set(this, value);
-                    yamlFile.set(((ConfigValue) annotation).path(), value);
-                    return;
-                }
-            }
+            final ConfigValue annotation = field.getAnnotation(ConfigValue.class);
+            if(annotation == null)
+                return;
+
+            field.set(this, value);
+            yamlFile.set(annotation.path(), value);
         } catch (IllegalAccessException | NoSuchFieldException e) {
             e.printStackTrace();
         }
@@ -53,17 +60,18 @@ public class Configuration {
      */
     public boolean hasField(@Nonnull String fieldName) {
         try {
-            return Arrays.stream(getClass().getField(fieldName).getAnnotations())
-                    .anyMatch(ConfigValue.class::isInstance);
-        } catch (NoSuchFieldException ignored) {
-            return false;
-        }
+            for(Annotation annotation : getClass().getField(fieldName).getAnnotations()) {
+                if(annotation instanceof ConfigValue) {
+                    return true;
+                }
+            }
+        }catch (NoSuchFieldException ignored) {}
+
+        return false;
     }
 
     /**
      * Save current changes in the yml file.
-     *
-     * @throws IOException
      */
     public void save() throws IOException {
         yamlFile.save();

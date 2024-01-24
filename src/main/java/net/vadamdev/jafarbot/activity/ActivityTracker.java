@@ -39,7 +39,7 @@ public final class ActivityTracker {
         final Date currentDate = new Date();
 
         Main.jafarBot.getProfileManager().getProfiles().stream()
-                .filter(profile -> !profile.isInVocal())
+                .filter(profile -> !profile.isInVC())
                 .filter(profile -> guild.getMemberById(profile.getUserId()) != null)
                 .forEach(profile -> checkProfileActivity(profile, guild, inactiveRole, currentDate));
     }
@@ -60,6 +60,9 @@ public final class ActivityTracker {
     }
 
     private boolean shouldBeInactive(Profile profile, Member member, Date currentDate) {
+        if(!mainConfig.ACTIVITY_TRACKER)
+            return false;
+
         if(hasRole(member, mainConfig.FRIEND_ROLE, mainConfig.RETIRED_ROLE))
             return false;
 

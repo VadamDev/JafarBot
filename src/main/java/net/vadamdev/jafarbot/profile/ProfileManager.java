@@ -28,7 +28,7 @@ public final class ProfileManager {
     private final Map<String, Profile> cache;
     private final File profilesFile;
 
-    private final ScheduledExecutorService scheduledExecutorService;
+    private final ScheduledExecutorService executorService;
 
     public ProfileManager(File profilesFile) {
         this.cache = new HashMap<>();
@@ -36,12 +36,12 @@ public final class ProfileManager {
 
         unserialize();
 
-        this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-        this.scheduledExecutorService.scheduleAtFixedRate(this::serialize, 6, 6, TimeUnit.HOURS);
+        this.executorService = Executors.newSingleThreadScheduledExecutor();
+        this.executorService.scheduleAtFixedRate(this::serialize, 6, 6, TimeUnit.HOURS);
     }
 
     public void onDisable() {
-        scheduledExecutorService.shutdownNow();
+        executorService.shutdownNow();
         serialize();
     }
 

@@ -37,7 +37,7 @@ public abstract class ChannelCreator<T extends CreatedChannel> {
         final String channelName = getChannelName(owner)
                 .replace("%index%", (Main.jafarBot.getChannelCreatorManager().getActiveChannelAmount(creatorId) + 1) + "");
 
-        ChannelAction<VoiceChannel> action;
+        final ChannelAction<VoiceChannel> action;
         if(categoryId != null && guild.getCategoryById(categoryId) != null)
             action = guild.createVoiceChannel(channelName, guild.getCategoryById(categoryId));
         else
@@ -47,7 +47,7 @@ public abstract class ChannelCreator<T extends CreatedChannel> {
             guild.moveVoiceMember(owner, channel).queue();
 
             try {
-                CreatedChannel createdChannel = constructor.newInstance(channel.getId(), owner.getId());
+                final CreatedChannel createdChannel = constructor.newInstance(channel.getId(), owner.getId());
                 createdChannel.onChannelCreation(channel, owner);
                 Main.jafarBot.getChannelCreatorManager().registerCreatedChannel(creatorId, createdChannel);
             } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {

@@ -1,7 +1,6 @@
-package net.vadamdev.jdautils.commands.data.impl;
+package net.vadamdev.jdautils.commands.data;
 
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-import net.vadamdev.jdautils.commands.data.ICommandData;
 
 import javax.annotation.Nonnull;
 
@@ -9,10 +8,10 @@ import javax.annotation.Nonnull;
  * @author VadamDev
  * @since 08/06/2023
  */
-public class SlashCommandData implements ICommandData {
+public class SlashCmdData implements ICommandData {
     private final SlashCommandInteractionEvent event;
 
-    public SlashCommandData(SlashCommandInteractionEvent event) {
+    public SlashCmdData(SlashCommandInteractionEvent event) {
         this.event = event;
     }
 

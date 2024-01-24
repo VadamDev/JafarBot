@@ -1,7 +1,6 @@
-package net.vadamdev.jdautils.commands.data.impl;
+package net.vadamdev.jdautils.commands.data;
 
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-import net.vadamdev.jdautils.commands.data.ICommandData;
 
 import javax.annotation.Nonnull;
 
@@ -9,11 +8,11 @@ import javax.annotation.Nonnull;
  * @author VadamDev
  * @since 08/06/2023
  */
-public class TextCommandData implements ICommandData {
+public class TextCmdData implements ICommandData {
     private final MessageReceivedEvent event;
     private final String[] args;
 
-    public TextCommandData(MessageReceivedEvent event, String[] args) {
+    public TextCmdData(MessageReceivedEvent event, String[] args) {
         this.event = event;
         this.args = args;
     }

@@ -1,6 +1,5 @@
 package net.vadamdev.jafarbot.commands;
 
-import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
@@ -15,12 +14,13 @@ import net.vadamdev.jafarbot.Main;
 import net.vadamdev.jafarbot.captaincy.BoatType;
 import net.vadamdev.jafarbot.captaincy.CaptainedBoat;
 import net.vadamdev.jafarbot.profile.Profile;
+import net.vadamdev.jafarbot.utils.JafarEmbed;
 import net.vadamdev.jdautils.commands.Command;
 import net.vadamdev.jdautils.commands.ISlashCommand;
 import net.vadamdev.jdautils.commands.data.ICommandData;
+import net.vadamdev.jdautils.commands.data.SlashCmdData;
 
 import javax.annotation.Nonnull;
-import java.awt.*;
 
 public class BoatCommand extends Command implements ISlashCommand {
     public BoatCommand() {
@@ -30,53 +30,49 @@ public class BoatCommand extends Command implements ISlashCommand {
 
     @Override
     public void execute(@Nonnull Member sender, @Nonnull ICommandData commandData) {
-        final SlashCommandInteractionEvent event = ((net.vadamdev.jdautils.commands.data.impl.SlashCommandData) commandData).getEvent();
+        final SlashCommandInteractionEvent event = commandData.castOrNull(SlashCmdData.class).getEvent();
 
-        final User target = event.getOption("target").getAsUser();
+        final User target = event.getOption("target", OptionMapping::getAsUser);
 
         switch(event.getSubcommandName()) {
             case "create":
-                final BoatType boatType = BoatType.valueOf(event.getOption("type").getAsString());
-                final String formattedName = event.getOption("emoji", "❔", OptionMapping::getAsString) + "┃" + event.getOption("name").getAsString();
+                final BoatType boatType = BoatType.valueOf(event.getOption("type", OptionMapping::getAsString));
+                final String formattedName = event.getOption("emoji", "❔", OptionMapping::getAsString) + "┃" + event.getOption("name", OptionMapping::getAsString);
 
-                final CaptainedBoat captainedBoat = Main.jafarBot.getCaptainedBoatManager().getCaptainedBoatByUser(target.getId());
-                captainedBoat.setName(boatType, formattedName);
+                final CaptainedBoat boat = Main.jafarBot.getCaptainedBoatManager().getCaptainedBoatByUser(target.getId());
+                boat.setName(boatType, formattedName);
 
-                event.replyEmbeds(new EmbedBuilder()
-                        .setTitle("Bateaux Capitainé")
+                event.replyEmbeds(new JafarEmbed()
+                        .setTitle("JafarBot - Bateaux Capitainé")
                         .setDescription("Le " + boatType.getDisplayName() + " de " + target.getAsMention() + " a été mis à jour ! (``" + formattedName + "``)")
-                        .setColor(Color.ORANGE)
-                        .setFooter("JafarBot", Main.jafarBot.getAvatarURL()).build()).queue();
+                        .setColor(JafarEmbed.SUCCESS_COLOR).build()).queue();
 
                 break;
             case "delete":
-                final BoatType formattedBoatType = event.getOption("type", null, optionMapping -> BoatType.valueOf(optionMapping.getAsString()));
+                final BoatType formattedBoatType = BoatType.valueOf(event.getOption("type", null, OptionMapping::getAsString));
 
                 final Profile profile = Main.jafarBot.getProfileManager().getProfile(target.getId());
                 if(profile.getCaptainedBoat() != null) {
                     if(formattedBoatType != null) {
                         profile.getCaptainedBoat().setName(formattedBoatType, null);
 
-                        event.replyEmbeds(new EmbedBuilder()
-                                .setTitle("Bateaux Capitainé")
+                        event.replyEmbeds(new JafarEmbed()
+                                .setTitle("JafarBot - Bateaux Capitainé")
                                 .setDescription("Le nom du " + formattedBoatType.name() + " de " + target.getAsMention() + " a été supprimé !")
-                                .setColor(Color.ORANGE)
-                                .setFooter("JafarBot", Main.jafarBot.getAvatarURL()).build()).queue();
+                                .setColor(JafarEmbed.SUCCESS_COLOR).build()).queue();
                     }else {
                         profile.setCaptainedBoat(null);
 
-                        event.replyEmbeds(new EmbedBuilder()
-                                .setTitle("Bateaux Capitainé")
+                        event.replyEmbeds(new JafarEmbed()
+                                .setTitle("JafarBot - Bateaux Capitainé")
                                 .setDescription("Le bateau de " + target.getAsMention() + " a été supprimé !")
-                                .setColor(Color.ORANGE)
-                                .setFooter("JafarBot", Main.jafarBot.getAvatarURL()).build()).queue();
+                                .setColor(JafarEmbed.SUCCESS_COLOR).build()).queue();
                     }
                 }else
-                    event.replyEmbeds(new EmbedBuilder()
-                            .setTitle("Bateaux Capitainé")
+                    event.replyEmbeds(new JafarEmbed()
+                            .setTitle("JafarBot - Bateaux Capitainé")
                             .setDescription("Le bateau de " + target.getAsMention() + " n'existe pas !")
-                            .setColor(Color.RED)
-                            .setFooter("JafarBot", Main.jafarBot.getAvatarURL()).build()).queue();
+                            .setColor(JafarEmbed.ERROR_COLOR).build()).queue();
 
                 break;
             default:
@@ -109,9 +105,9 @@ public class BoatCommand extends Command implements ISlashCommand {
                                         new OptionData(OptionType.USER, "target", "Cible")
                                                 .setRequired(true),
                                         new OptionData(OptionType.STRING, "type", "Type du bateau")
-                                                .addChoice("Sloop", BoatType.SLOOP.name())
-                                                .addChoice("Brigantin", BoatType.BRIGANTINE.name())
-                                                .addChoice("Gallion", BoatType.GALLEON.name())
+                                                .addChoice(BoatType.SLOOP.getDisplayName(), BoatType.SLOOP.name())
+                                                .addChoice(BoatType.BRIGANTINE.getDisplayName(), BoatType.BRIGANTINE.name())
+                                                .addChoice(BoatType.GALLEON.getDisplayName(), BoatType.GALLEON.name())
                                 )
                 );
     }

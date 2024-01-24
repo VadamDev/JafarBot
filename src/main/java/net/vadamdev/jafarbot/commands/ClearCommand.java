@@ -1,21 +1,21 @@
 package net.vadamdev.jafarbot.commands;
 
-import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
-import net.vadamdev.jafarbot.Main;
+import net.vadamdev.jafarbot.utils.JafarEmbed;
 import net.vadamdev.jdautils.commands.Command;
 import net.vadamdev.jdautils.commands.ISlashCommand;
 import net.vadamdev.jdautils.commands.data.ICommandData;
+import net.vadamdev.jdautils.commands.data.SlashCmdData;
 
 import javax.annotation.Nonnull;
-import java.awt.*;
 
 /**
  * @author VadamDev
@@ -29,24 +29,23 @@ public class ClearCommand extends Command implements ISlashCommand {
 
     @Override
     public void execute(@Nonnull Member sender, @Nonnull ICommandData commandData) {
-        final SlashCommandInteractionEvent event = ((net.vadamdev.jdautils.commands.data.impl.SlashCommandData) commandData).getEvent();
+        final SlashCommandInteractionEvent event = commandData.castOrNull(SlashCmdData.class).getEvent();
+
+        final int amount = event.getOption("amount", OptionMapping::getAsInt);
 
         final MessageChannel textChannel = event.getChannel();
-        final int amount = event.getOption("amount").getAsInt();
-
         textChannel.purgeMessages(textChannel.getHistory().retrievePast(amount).complete());
 
-        event.replyEmbeds(new EmbedBuilder()
-                .setTitle("Clear")
+        event.replyEmbeds(new JafarEmbed()
+                .setTitle("JafarBot - Clear")
                 .setDescription(amount + " messages ont été supprimer !")
-                .setColor(Color.ORANGE)
-                .setFooter("JafarBot", Main.jafarBot.getAvatarURL()).build()).setEphemeral(true).queue();
+                .setColor(JafarEmbed.SUCCESS_COLOR).build()).setEphemeral(true).queue();
     }
 
     @Nonnull
     @Override
     public SlashCommandData createSlashCommand() {
-        return Commands.slash(name, "Supprime un nombre donnée de messages dans le salon ou la commande est éxécuté")
+        return Commands.slash(name, "Supprime un nombre de messages dans le salon ou la commande est éxecuté")
                 .addOptions(
                         new OptionData(OptionType.INTEGER, "amount", "Nombre de messages à supprimer")
                                 .setMinValue(1)

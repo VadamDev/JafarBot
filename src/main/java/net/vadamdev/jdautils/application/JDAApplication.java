@@ -47,9 +47,17 @@ public class JDAApplication<T extends JDABot> {
         );
     }
 
-    public void start() throws InterruptedException {
+    public void start() {
         logger.info("Starting " + jdaBot.getClass().getSimpleName() + "...");
-        jdaBot.setup();
+
+        try {
+            jdaBot.setup();
+        }catch(Exception e) {
+            e.printStackTrace();
+
+            logger.error("An error occurred while starting the bot! Disabling JDA Application...");
+            System.exit(0);
+        }
 
         final Scanner scanner = new Scanner(System.in);
         do {

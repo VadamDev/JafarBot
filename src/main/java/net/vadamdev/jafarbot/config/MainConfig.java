@@ -24,6 +24,13 @@ public class MainConfig extends Configuration {
     public String ACTIVITY = "Sea of Thieves";
 
     /*
+       Features
+     */
+
+    @ConfigValue(path = "features.activityTracker")
+    public boolean ACTIVITY_TRACKER = true;
+
+    /*
        Ids
      */
 
@@ -91,13 +98,13 @@ public class MainConfig extends Configuration {
      */
 
     @ConfigValue(path = "music.defaultVolume")
-    public int MUSIC_DEFAULT_VOLUME = 25;
+    public int MUSIC_DEFAULT_VOLUME = 15;
 
     @ConfigValue(path = "music.maxVolume")
     public int MUSIC_MAX_VOLUME = 100;
 
     public MainConfig() {
-        super("JafarBot/config.yml");
+        super("./config.yml");
     }
 
     public Activity formatActivity() {

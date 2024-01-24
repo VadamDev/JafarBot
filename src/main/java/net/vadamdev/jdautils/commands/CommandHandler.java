@@ -6,17 +6,17 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
-import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.vadamdev.jafarbot.Main;
 import net.vadamdev.jdautils.commands.data.ICommandData;
-import net.vadamdev.jdautils.commands.data.impl.SlashCommandData;
-import net.vadamdev.jdautils.commands.data.impl.TextCommandData;
-import org.jetbrains.annotations.NotNull;
+import net.vadamdev.jdautils.commands.data.SlashCmdData;
+import net.vadamdev.jdautils.commands.data.TextCmdData;
+import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -27,27 +27,25 @@ import java.util.stream.Collectors;
  * @author VadamDev
  * @since 17/10/2022
  */
-public final class CommandHandler extends ListenerAdapter {
+public final class CommandHandler {
     public static Consumer<Message> PERMISSION_ACTION = message -> message.reply("You don't have enough permission.").queue();
-
-    private final JDA jda;
 
     private final List<Command> commands;
     private final String commandPrefix;
 
-    public CommandHandler(JDA jda, String commandPrefix) {
-        this.jda = jda;
-
+    public CommandHandler(String commandPrefix, JDA jda) {
         this.commands = new ArrayList<>();
         this.commandPrefix = commandPrefix;
+
+        if(commandPrefix != null && !jda.getGatewayIntents().contains(GatewayIntent.MESSAGE_CONTENT))
+            LoggerFactory.getLogger(CommandHandler.class).warn("MESSAGE_CONTENT is currently not enabled, legacy commands will not work!");
     }
 
     /*
        Legacy Commands
      */
 
-    @Override
-    public void onMessageReceived(@NotNull MessageReceivedEvent event) {
+    public void handleMessageReceive(@Nonnull MessageReceivedEvent event) {
         if(commandPrefix == null)
             return;
 
@@ -69,7 +67,7 @@ public final class CommandHandler extends ListenerAdapter {
                             return;
                         }
 
-                        final TextCommandData commandData = new TextCommandData(event, args.length == 1 ? new String[0] : Arrays.copyOfRange(args, 1, args.length));
+                        final TextCmdData commandData = new TextCmdData(event, args.length == 1 ? new String[0] : Arrays.copyOfRange(args, 1, args.length));
 
                         logCommandExecution(member, commandData, commandName);
                         command.execute(member, commandData);
@@ -81,23 +79,25 @@ public final class CommandHandler extends ListenerAdapter {
        Slash Commands
      */
 
-    @Override
-    public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
+    public void handleSlashCommandInteraction(@Nonnull SlashCommandInteractionEvent event) {
         commands.stream()
                 .filter(ISlashCommand.class::isInstance)
                 .filter(command -> command.check(event.getName()))
                 .findFirst().ifPresent(command -> {
-                    final Member member = event.getMember();
+                    if(event.getGuild() == null) {
+                        event.reply("❌ Slash commands only work in guilds!").setEphemeral(true).queue();
+                        return;
+                    }
 
-                    final SlashCommandData commandData = new SlashCommandData(event);
+                    final SlashCmdData commandData = new SlashCmdData(event);
+                    final Member member = event.getMember();
 
                     logCommandExecution(member, commandData, event.getFullCommandName());
                     command.execute(member, commandData);
                 });
     }
 
-    @Override
-    public void onCommandAutoCompleteInteraction(@NotNull CommandAutoCompleteInteractionEvent event) {
+    public void handleCommandAutoCompleteInteraction(@Nonnull CommandAutoCompleteInteractionEvent event) {
         commands.stream()
                 .filter(ISlashCommand.class::isInstance)
                 .filter(command -> command.check(event.getName()))
@@ -108,7 +108,7 @@ public final class CommandHandler extends ListenerAdapter {
         commands.add(command);
     }
 
-    public void registerSlashCommands() {
+    public void registerSlashCommands(JDA jda) {
         final List<CommandData> commands = this.commands.stream()
                 .filter(ISlashCommand.class::isInstance)
                 .map(command -> {
@@ -129,14 +129,14 @@ public final class CommandHandler extends ListenerAdapter {
         final StringBuilder formattedCommand = new StringBuilder(commandName);
 
         if(commandData.getType().equals(ICommandData.Type.TEXT)) {
-            for(String arg : ((TextCommandData) commandData).getArgs())
+            for(String arg : ((TextCmdData) commandData).getArgs())
                 formattedCommand.append(" " + arg);
         }else if(commandData.getType().equals(ICommandData.Type.SLASH)) {
-            final SlashCommandInteractionEvent event = ((SlashCommandData) commandData).getEvent();
+            final SlashCommandInteractionEvent event = ((SlashCmdData) commandData).getEvent();
             event.getOptions().forEach(optionMapping -> formattedCommand.append(" (" + optionMapping.getName() + ": " + formatOptionMapping(optionMapping) + ")"));
         }
 
-        Main.logger.info(sender.getEffectiveName() + " issued command: " + formattedCommand);
+        Main.logger.info(sender.getUser().getName() + " in " + sender.getGuild().getId() + " issued command: " + formattedCommand);
     }
 
     private String formatOptionMapping(OptionMapping optionMapping) {

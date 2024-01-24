@@ -6,22 +6,20 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.managers.AudioManager;
-import net.vadamdev.jafarbot.Main;
 
-import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class TrackScheduler extends AudioEventAdapter {
     private final Guild guild;
-    private final AudioPlayer player;
+    private final AudioPlayer audioPlayer;
     public BlockingQueue<AudioTrack> queue;
 
     public boolean repeating = false;
 
-    public TrackScheduler(Guild guild, AudioPlayer player) {
+    public TrackScheduler(Guild guild, AudioPlayer audioPlayer) {
         this.guild = guild;
-        this.player = player;
+        this.audioPlayer = audioPlayer;
         this.queue = new LinkedBlockingQueue<>();
     }
 
@@ -31,13 +29,13 @@ public class TrackScheduler extends AudioEventAdapter {
             return;
 
         if(repeating)
-            this.player.startTrack(track.makeClone(), false);
+            this.audioPlayer.startTrack(track.makeClone(), false);
         else
             nextTrack();
     }
 
     public void queue(AudioTrack track) {
-        if(!player.startTrack(track, true))
+        if(!audioPlayer.startTrack(track, true))
             queue.offer(track);
     }
 
@@ -47,14 +45,8 @@ public class TrackScheduler extends AudioEventAdapter {
 
     public void nextTrack(int index) {
         if(queue.isEmpty()) {
-            final GuildMusicManager musicManager = Main.jafarBot.getPlayerManager().getMusicManager();
-
-            if(musicManager.getInterfaceMessage() != null) {
-                musicManager.getInterfaceMessage().delete().queue();
-                musicManager.setInterfaceMessage(null);
-            }
-
             final AudioManager audioManager = guild.getAudioManager();
+
             if(audioManager.getConnectedChannel() != null)
                 audioManager.closeAudioConnection();
         }else {
@@ -68,19 +60,11 @@ public class TrackScheduler extends AudioEventAdapter {
                 }
             }
 
-            player.startTrack(queue.poll(), false);
+            audioPlayer.startTrack(queue.poll(), false);
         }
     }
 
     public void clear() {
         queue.clear();
-    }
-
-    public AudioTrack getNextTrack() {
-        try {
-            return new ArrayList<>(queue).get(0);
-        }catch(Exception ignored) {
-            return null;
-        }
     }
 }

@@ -1,24 +1,25 @@
 package net.vadamdev.jafarbot.commands;
 
-import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 import net.vadamdev.jafarbot.Main;
 import net.vadamdev.jafarbot.config.MainConfig;
+import net.vadamdev.jafarbot.utils.JafarEmbed;
 import net.vadamdev.jdautils.commands.Command;
 import net.vadamdev.jdautils.commands.ISlashCommand;
 import net.vadamdev.jdautils.commands.data.ICommandData;
-import net.vadamdev.jdautils.commands.data.impl.TextCommandData;
+import net.vadamdev.jdautils.commands.data.SlashCmdData;
+import net.vadamdev.jdautils.commands.data.TextCmdData;
 
 import javax.annotation.Nonnull;
-import java.awt.*;
 import java.io.IOException;
 
 /**
@@ -26,11 +27,10 @@ import java.io.IOException;
  * @since 09/06/2023
  */
 public class SettingsCommand extends Command implements ISlashCommand {
-    private final MessageEmbed SUCCESS_MESSAGE = new EmbedBuilder()
-            .setTitle("Paramètres")
+    private static final MessageEmbed SUCCESS_MESSAGE = new JafarEmbed()
+            .setTitle("JafarBot - Paramètres")
             .setDescription("Vos modifications ont été enregistrer avec succès !")
-            .setFooter("JafarBot", Main.jafarBot.getAvatarURL())
-            .setColor(Color.ORANGE).build();
+            .setColor(JafarEmbed.SUCCESS_COLOR).build();
 
     private final MainConfig mainConfig;
 
@@ -46,24 +46,23 @@ public class SettingsCommand extends Command implements ISlashCommand {
         String fieldName = null, value = null;
 
         if(commandData.getType().equals(ICommandData.Type.SLASH)) {
-            final SlashCommandInteractionEvent event = ((net.vadamdev.jdautils.commands.data.impl.SlashCommandData) commandData).getEvent();
+            final SlashCommandInteractionEvent event = commandData.castOrNull(SlashCmdData.class).getEvent();
 
-            fieldName = event.getOption("fieldname").getAsString();
-            value = event.getOption("value").getAsString();
+            fieldName = event.getOption("field", OptionMapping::getAsString);
+            value = event.getOption("value", OptionMapping::getAsString);
 
             event.replyEmbeds(SUCCESS_MESSAGE).queue();
         }else if(commandData.getType().equals(ICommandData.Type.TEXT)) {
-            final TextCommandData textCommandData = (TextCommandData) commandData;
+            final TextCmdData textData = commandData.castOrNull(TextCmdData.class);
 
-            final String[] args = textCommandData.getArgs();
-            final Message message = textCommandData.getEvent().getMessage();
+            final String[] args = textData.getArgs();
+            final Message message = textData.getEvent().getMessage();
 
             if(args.length < 2 || !mainConfig.hasField(args[0])) {
-                message.replyEmbeds(new EmbedBuilder()
-                        .setTitle("Paramètres - Erreur")
+                message.replyEmbeds(new JafarEmbed()
+                        .setTitle("JafarBot - Paramètres")
                         .setDescription("Une erreur est survenue.\nUtilisez la commande ``!settings <fieldName> <value>``")
-                        .setFooter("JafarBot", Main.jafarBot.getAvatarURL())
-                        .setColor(Color.RED).build()).queue();
+                        .setColor(JafarEmbed.ERROR_COLOR).build()).queue();
 
                 return;
             }
@@ -89,9 +88,9 @@ public class SettingsCommand extends Command implements ISlashCommand {
     @Nonnull
     @Override
     public SlashCommandData createSlashCommand() {
-        return Commands.slash(name, "Change la valeur de n'importe quel variable dans la config")
+        return Commands.slash(name, "Change la valeur d'une variable dans la config du bot")
                 .addOptions(
-                        new OptionData(OptionType.STRING, "fieldname", "Nom de la variable")
+                        new OptionData(OptionType.STRING, "field", "Nom de la variable")
                                 .setRequired(true),
                         new OptionData(OptionType.STRING, "value", "Nouvelle valeur")
                                 .setRequired(true)

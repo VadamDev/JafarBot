@@ -5,7 +5,6 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
-import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import net.vadamdev.jafarbot.activity.ActivityTracker;
 import net.vadamdev.jafarbot.captaincy.CaptainedBoatManager;
 import net.vadamdev.jafarbot.channelcreator.ChannelCreatorManager;
@@ -57,9 +56,13 @@ public class JafarBot extends JDABot implements IReloadable {
         profileManager = new ProfileManager(profilesFile);
 
         channelCreatorManager = new ChannelCreatorManager();
-        registerChannelCreators();
+        channelCreatorManager.registerChannelCreators(
+                new BoatChannelCreator(),
+                new GamesChannelCreator(),
+                new JafarMcChannelCreator()
+        );
 
-        captainedBoatManager = new CaptainedBoatManager();
+        captainedBoatManager = new CaptainedBoatManager(profileManager);
 
         final Guild guild = jda.getGuildById(mainConfig.GUILD_ID);
         if(guild != null)
@@ -71,13 +74,12 @@ public class JafarBot extends JDABot implements IReloadable {
 
         registerCommands(
                 new SettingsCommand(),
-                new ClearCommand(),
+                new ActivityTrackerCommand(),
                 new InfoCommand(),
+                new ClearCommand(),
                 new ActivityCommand(),
 
                 new BoatCommand(),
-                new BoatOptionsCommand(),
-
                 new MusicCommand()
         );
 
@@ -110,27 +112,19 @@ public class JafarBot extends JDABot implements IReloadable {
         }
 
         try {
-            profilesFile = Utils.initFile("JafarBot/profiles.json");
+            profilesFile = Utils.initFile("./profiles.json");
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    private void registerChannelCreators() {
-        channelCreatorManager.registerChannelCreator(new BoatChannelCreator());
-        channelCreatorManager.registerChannelCreator(new GamesChannelCreator());
-        channelCreatorManager.registerChannelCreator(new JafarMcChannelCreator());
     }
 
     @Nonnull
     @Override
     protected JDABuilder computeBuilder(JDABuilder jdaBuilder) {
         return jdaBuilder
-                .setAutoReconnect(true)
                 .setChunkingFilter(ChunkingFilter.ALL)
                 .setMemberCachePolicy(MemberCachePolicy.ALL)
-                .enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_PRESENCES)
-                .enableCache(CacheFlag.ACTIVITY);
+                .enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.MESSAGE_CONTENT);
     }
 
     public ProfileManager getProfileManager() {

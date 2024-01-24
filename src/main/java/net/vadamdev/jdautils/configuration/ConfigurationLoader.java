@@ -3,7 +3,6 @@ package net.vadamdev.jdautils.configuration;
 import org.simpleyaml.configuration.file.YamlFile;
 
 import java.io.IOException;
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 
 /**
@@ -13,6 +12,10 @@ import java.lang.reflect.Field;
 public final class ConfigurationLoader {
     private ConfigurationLoader() {}
 
+    /**
+     * Load a configuration
+     * @param configuration The configuration that needs to be loaded
+     */
     public static void loadConfiguration(Configuration configuration) throws IOException, IllegalAccessException {
         final YamlFile yamlFile = configuration.getYamlFile();
         if(!yamlFile.exists())
@@ -21,22 +24,24 @@ public final class ConfigurationLoader {
         yamlFile.load();
 
         for (Field field : configuration.getClass().getDeclaredFields()) {
-            for(Annotation annotation : field.getAnnotations()) {
-                if(!(annotation instanceof ConfigValue))
-                    continue;
+            final ConfigValue annotation = field.getAnnotation(ConfigValue.class);
+            if(annotation == null)
+                continue;
 
-                final String path = ((ConfigValue) annotation).path();
-
-                if(yamlFile.isSet(path))
-                    field.set(configuration, yamlFile.get(path));
-                else
-                    yamlFile.addDefault(path, field.get(configuration));
-            }
+            final String path = annotation.path();
+            if(yamlFile.isSet(path))
+                field.set(configuration, yamlFile.get(path));
+            else
+                yamlFile.addDefault(path, field.get(configuration));
         }
 
-        yamlFile.save();
+        configuration.save();
     }
 
+    /**
+     * Load multiple configurations
+     * @param configurations The configurations that need to be loaded
+     */
     public static void loadConfigurations(Configuration... configurations) throws IOException, IllegalAccessException {
         for(Configuration configuration : configurations)
             loadConfiguration(configuration);

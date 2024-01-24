@@ -10,31 +10,22 @@ import net.vadamdev.jdautils.commands.CommandHandler;
  */
 public final class JDAUtils {
     private final JDA jda;
-    private final String commandPrefix;
 
-    private CommandHandler commandHandler;
+    private final CommandHandler commandHandler;
 
     public JDAUtils(JDA jda, String commandPrefix) {
         this.jda = jda;
-        this.commandPrefix = commandPrefix;
-    }
 
-    public void initCommandHandler() {
-        commandHandler = new CommandHandler(jda, commandPrefix);
-        jda.addEventListener(commandHandler);
+        this.commandHandler = new CommandHandler(commandPrefix, jda);
+
+        jda.addEventListener(new JDAUListener(commandHandler));
     }
 
     public void registerCommand(Command command) {
-        if(commandHandler == null)
-            return;
-
         commandHandler.registerCommand(command);
     }
 
     public void finishCommandRegistry() {
-        if(commandHandler == null)
-            return;
-
-        commandHandler.registerSlashCommands();
+        commandHandler.registerSlashCommands(jda);
     }
 }

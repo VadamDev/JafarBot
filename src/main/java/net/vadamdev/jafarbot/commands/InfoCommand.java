@@ -1,6 +1,5 @@
 package net.vadamdev.jafarbot.commands;
 
-import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
@@ -16,12 +15,13 @@ import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import net.vadamdev.jafarbot.Main;
 import net.vadamdev.jafarbot.activity.ActivityTracker;
 import net.vadamdev.jafarbot.profile.Profile;
+import net.vadamdev.jafarbot.utils.JafarEmbed;
 import net.vadamdev.jdautils.commands.Command;
 import net.vadamdev.jdautils.commands.ISlashCommand;
 import net.vadamdev.jdautils.commands.data.ICommandData;
+import net.vadamdev.jdautils.commands.data.SlashCmdData;
 
 import javax.annotation.Nonnull;
-import java.awt.*;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
@@ -34,11 +34,11 @@ public class InfoCommand extends Command implements ISlashCommand {
 
     @Override
     public void execute(@Nonnull Member sender, @Nonnull ICommandData commandData) {
-        final SlashCommandInteractionEvent event = ((net.vadamdev.jdautils.commands.data.impl.SlashCommandData) commandData).getEvent();
+        final SlashCommandInteractionEvent event = commandData.castOrNull(SlashCmdData.class).getEvent();
 
         switch(event.getSubcommandName()) {
             case "get":
-                event.replyEmbeds(getUserInfos(event.getOption("target").getAsMember())).queue();
+                event.replyEmbeds(getUserInfos(event.getOption("target", OptionMapping::getAsMember))).queue();
 
                 break;
             case "top":
@@ -59,7 +59,7 @@ public class InfoCommand extends Command implements ISlashCommand {
         boolean flag = false;
 
         final Profile profile = Main.jafarBot.getProfileManager().getProfile(member.getId());
-        if(profile.isInVocal()) {
+        if(profile.isInVC()) {
             description.append("- Le <t:" + profile.getConnectionTime() / 1000 + ":f> *actuellement en vocal*\n \n");
             flag = true;
         }else if(ActivityTracker.hasInactiveRole(member, Main.jafarBot.mainConfig.INACTIVE_ROLE)) {
@@ -84,12 +84,11 @@ public class InfoCommand extends Command implements ISlashCommand {
         if(!flag)
             description.append("Aucune");
 
-        return new EmbedBuilder()
+        return new JafarEmbed()
                 .setTitle("Informations de " + member.getEffectiveName())
                 .setDescription(description.toString())
-                .setColor(Color.ORANGE)
-                .setTimestamp(Instant.now())
-                .setFooter("JafarBot", Main.jafarBot.getAvatarURL()).build();
+                .setColor(JafarEmbed.NEUTRAL_COLOR)
+                .setTimestamp(Instant.now()).build();
     }
 
     private MessageEmbed createUserTop(Guild guild, int limit, boolean showFriends, boolean showRetired) {
@@ -116,12 +115,11 @@ public class InfoCommand extends Command implements ISlashCommand {
                     description.append("- " + member.getAsMention() + (ActivityTracker.hasInactiveRole(member, Main.jafarBot.mainConfig.INACTIVE_ROLE) ? " (\uD83D\uDCA4)" : "") + " (<t:" + profile.getLastActivity() / 1000 + ":R>)\n");
                 });
 
-        return new EmbedBuilder()
+        return new JafarEmbed()
                 .setTitle("TOP des Inactifs")
                 .setDescription(description.toString())
-                .setColor(Color.ORANGE)
-                .setTimestamp(Instant.now())
-                .setFooter("JafarBot", Main.jafarBot.getAvatarURL()).build();
+                .setColor(JafarEmbed.NEUTRAL_COLOR)
+                .setTimestamp(Instant.now()).build();
     }
 
     @Nonnull

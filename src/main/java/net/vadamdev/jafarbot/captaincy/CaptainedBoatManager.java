@@ -1,6 +1,5 @@
 package net.vadamdev.jafarbot.captaincy;
 
-import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
@@ -13,27 +12,27 @@ import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.vadamdev.jafarbot.Main;
+import net.vadamdev.jafarbot.captaincy.menu.BoatSettingsMainMenu;
 import net.vadamdev.jafarbot.profile.Profile;
 import net.vadamdev.jafarbot.profile.ProfileManager;
+import net.vadamdev.jafarbot.utils.JafarEmbed;
 
 import javax.annotation.Nonnull;
-import java.awt.*;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 public final class CaptainedBoatManager {
-    private final MessageEmbed NOT_OWNER_MESSAGE = new EmbedBuilder()
+    private final MessageEmbed NOT_OWNER_MESSAGE = new JafarEmbed()
             .setTitle("Bateaux Capitainés")
-            .setDescription("Vous pouvez interagir avec ces boutons seulement si vous êtes le propriétaire de ce bateau..")
-            .setColor(Color.RED)
-            .setFooter("JafarBot", Main.jafarBot.getAvatarURL()).build();
+            .setDescription("Vous pouvez interagir avec ces boutons seulement si vous êtes le propriétaire de ce bateau.")
+            .setColor(JafarEmbed.ERROR_COLOR).build();
 
     private final ProfileManager profileManager;
 
-    public CaptainedBoatManager() {
-        this.profileManager = Main.jafarBot.getProfileManager();
+    public CaptainedBoatManager(ProfileManager profileManager) {
+        this.profileManager = profileManager;
     }
 
     /*
@@ -65,11 +64,10 @@ public final class CaptainedBoatManager {
                             guild.moveVoiceMember(member, event.getChannelLeft()).queue();
 
                             member.getUser().openPrivateChannel()
-                                    .flatMap(channel -> channel.sendMessageEmbeds(new EmbedBuilder()
+                                    .flatMap(channel -> channel.sendMessageEmbeds(new JafarEmbed()
                                             .setTitle("Bateaux Capitainés")
                                             .setDescription("Ce channel a été bloquer par son capitaine. **Vous ne pouvez pas le rejoindre** !")
-                                            .setColor(Color.RED)
-                                            .setFooter("JafarBot", Main.jafarBot.getAvatarURL()).build())).queue();
+                                            .setColor(JafarEmbed.ERROR_COLOR).build())).queue();
                         });
         }
 
@@ -91,7 +89,7 @@ public final class CaptainedBoatManager {
         final String memberId = member.getId();
 
         switch(event.getComponentId()) {
-            case "jafarBot-CaptainedBoat-Lock":
+            case "JafarBot-CaptainedBoat-Lock":
                 getCaptainedBoatByChannel(channelId).ifPresent(captainedBoat -> {
                     if(!captainedBoat.getOwnerId().equals(memberId)) {
                         event.replyEmbeds(NOT_OWNER_MESSAGE).setEphemeral(true).queue();
@@ -103,7 +101,7 @@ public final class CaptainedBoatManager {
                 });
 
                 break;
-            case "jafarBot-CaptainedBoat-ForceLock":
+            case "JafarBot-CaptainedBoat-ForceLock":
                 getCaptainedBoatByChannel(channelId).ifPresent(captainedBoat -> {
                     if(!captainedBoat.getOwnerId().equals(memberId)) {
                         event.replyEmbeds(NOT_OWNER_MESSAGE).setEphemeral(true).queue();
@@ -115,24 +113,34 @@ public final class CaptainedBoatManager {
                 });
 
                 break;
-            case "jafarBot-CaptainedBoat-Delete":
+            case "JafarBot-CaptainedBoat-Delete":
                 getCaptainedBoatByChannel(channelId).ifPresent(captainedBoat -> {
                     if(!captainedBoat.getOwnerId().equals(memberId)) {
                         event.replyEmbeds(NOT_OWNER_MESSAGE).setEphemeral(true).queue();
                         return;
                     }
 
-                    event.replyEmbeds(new EmbedBuilder()
+                    event.replyEmbeds(new JafarEmbed()
                             .setTitle("Bateau de " + member.getEffectiveName())
                             .setDescription("Êtes-vous sur(e) de vouloir supprimer ce salon ?\n*Cela déconnectera toutes les personnes présentent à l'intérieur !*")
-                            .setColor(Color.ORANGE)
-                            .setFooter("JafarBot", Main.jafarBot.getAvatarURL()).build()).setActionRow(
-                                    Button.danger("jafarBot-CaptainedBoat-ConfirmDelete", "Confirmer")
+                            .setColor(JafarEmbed.NEUTRAL_COLOR).build()).setActionRow(
+                                    Button.danger("JafarBot-CaptainedBoat-ConfirmDelete", "Confirmer")
                             ).setEphemeral(true).queue();
                 });
 
                 break;
-            case "jafarBot-CaptainedBoat-ConfirmDelete":
+            case "JafarBot-CaptainedBoat-Settings":
+                getCaptainedBoatByChannel(channelId).ifPresent(captainedBoat -> {
+                    if(!captainedBoat.getOwnerId().equals(memberId)) {
+                        event.replyEmbeds(NOT_OWNER_MESSAGE).setEphemeral(true).queue();
+                        return;
+                    }
+
+                    BoatSettingsMainMenu.MAIN_MENU.open(event);
+                });
+
+                break;
+            case "JafarBot-CaptainedBoat-ConfirmDelete":
                 getCaptainedBoatByChannel(channelId).ifPresent(captainedBoat -> {
                     if(!captainedBoat.getOwnerId().equals(memberId)) {
                         event.replyEmbeds(NOT_OWNER_MESSAGE).setEphemeral(true).queue();
@@ -150,7 +158,7 @@ public final class CaptainedBoatManager {
     }
 
     public void handleSelectInteractionEvent(@Nonnull StringSelectInteractionEvent event) {
-        if(!event.getComponentId().equals("jafarBot-CaptainedBoat-ChooseBoatType"))
+        if(!event.getComponentId().equals("JafarBot-CaptainedBoat-ChooseBoatType"))
             return;
 
         getCaptainedBoatByChannel(event.getChannel().getId()).ifPresent(captainedBoat -> {

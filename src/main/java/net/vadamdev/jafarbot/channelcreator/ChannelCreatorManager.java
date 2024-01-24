@@ -85,6 +85,11 @@ public final class ChannelCreatorManager {
         channelCreators.put(channelCreator.getCreatorId(), channelCreator);
     }
 
+    public void registerChannelCreators(ChannelCreator<?>... channelCreators) {
+        for(ChannelCreator<?> channelCreator : channelCreators)
+            registerChannelCreator(channelCreator);
+    }
+
     public void deleteCreatedChannel(Guild guild, String channelId) {
         findCreatedChannel(channelId).ifPresent(pair -> {
             createdChannels.get(pair.getLeft()).remove(pair.getRight());

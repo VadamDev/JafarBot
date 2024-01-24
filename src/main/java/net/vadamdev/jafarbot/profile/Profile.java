@@ -92,7 +92,7 @@ public class Profile implements Serializable {
        Utils
      */
 
-    public boolean isInVocal() {
+    public boolean isInVC() {
         return connectionTime != 0;
     }
 }

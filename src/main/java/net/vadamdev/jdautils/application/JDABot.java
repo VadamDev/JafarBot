@@ -23,7 +23,7 @@ public class JDABot {
 
     private String AVATAR_URL;
 
-    public JDABot(@Nonnull String token, @Nullable String commandPrefix) {
+    public JDABot(String token, @Nullable String commandPrefix) {
         this.jdaBuilder = computeBuilder(JDABuilder.createDefault(token));
         this.commandPrefix = commandPrefix;
     }
@@ -33,7 +33,6 @@ public class JDABot {
         jda.awaitReady();
 
         jdaUtils = new JDAUtils(jda, commandPrefix);
-        jdaUtils.initCommandHandler();
 
         AVATAR_URL = jda.getSelfUser().getAvatarUrl();
 

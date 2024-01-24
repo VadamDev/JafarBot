@@ -11,19 +11,21 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.interactions.InteractionHook;
-import net.vadamdev.jafarbot.Main;
+import net.vadamdev.jafarbot.utils.JafarEmbed;
+import net.vadamdev.jafarbot.utils.Utils;
 
-import java.awt.*;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class PlayerManager {
     private final AudioPlayerManager audioPlayerManager;
-    private final GuildMusicManager musicManager;
+    private final MusicManager musicManager;
 
     public PlayerManager(Guild guild) {
         this.audioPlayerManager = new DefaultAudioPlayerManager();
 
-        this.musicManager = new GuildMusicManager(guild, audioPlayerManager);
+        this.musicManager = new MusicManager(guild, audioPlayerManager);
         guild.getAudioManager().setSendingHandler(musicManager.getAudioHandler());
 
         AudioSourceManagers.registerRemoteSources(audioPlayerManager);
@@ -37,25 +39,28 @@ public class PlayerManager {
                 musicManager.getTrackScheduler().queue(track);
 
                 final AudioTrackInfo trackInfo = track.getInfo();
-
-                interactionHook.sendMessageEmbeds(new EmbedBuilder()
-                        .setTitle("Jafarbot - Musique")
+                interactionHook.sendMessageEmbeds(new JafarEmbed()
+                        .setTitle("JafarBot - Musique")
                         .setDescription(
-                                "Ajout de la musique:\n" +
-                                "**" + trackInfo.title + "** by **" + trackInfo.author + "**"
+                                "> **Ajout de la musique:**\n" +
+                                "> " + trackInfo.title
                         )
-                        .setColor(Color.YELLOW)
-                        .setFooter("JafarBot", Main.jafarBot.getAvatarURL()).build()).queue();
+                        .setThumbnail(Utils.retrieveVideoThumbnail(trackInfo.uri))
+                        .setColor(JafarEmbed.NEUTRAL_COLOR).build()).queue();
             }
 
             @Override
             public void playlistLoaded(AudioPlaylist playlist) {
                 final List<AudioTrack> tracks = playlist.getTracks();
 
-                final StringBuilder description = new StringBuilder("Ajout de la playlist: **" + playlist.getName() + "**\n \n");
+                final StringBuilder description = new StringBuilder(
+                        "Ajout de la playlist: __" + playlist.getName() + "__\n" +
+                        "\n"
+                );
+
                 for(int i = 0; i < tracks.size(); i++) {
                     if(i >= 10) {
-                        description.append("- ... (+" + (tracks.size() - 10) + ")\n");
+                        description.append("- ... *(+" + (tracks.size() - 10) + ")*\n");
                         break;
                     }
 
@@ -65,34 +70,31 @@ public class PlayerManager {
                 for(AudioTrack track : tracks)
                     musicManager.getTrackScheduler().queue(track);
 
-                interactionHook.sendMessageEmbeds(new EmbedBuilder()
-                        .setTitle("Jafarbot - Musique")
+                interactionHook.sendMessageEmbeds(new JafarEmbed()
+                        .setTitle("JafarBot - Musique")
                         .setDescription(description.toString())
-                        .setColor(Color.YELLOW)
-                        .setFooter("Jafarbot", Main.jafarBot.getAvatarURL()).build()).queue();
+                        .setColor(JafarEmbed.NEUTRAL_COLOR).build()).queue();
             }
 
             @Override
             public void noMatches() {
-                interactionHook.sendMessageEmbeds(new EmbedBuilder()
-                        .setTitle("Jafarbot - Musique")
-                        .setDescription(source + " n'a pas été trouvé !")
-                        .setColor(Color.RED)
-                        .setFooter("Jafarbot", Main.jafarBot.getAvatarURL()).build()).queue();
+                interactionHook.sendMessageEmbeds(new JafarEmbed()
+                        .setTitle("JafarBot - Musique")
+                        .setDescription(source + " n'a pas pus être trouvé !")
+                        .setColor(JafarEmbed.ERROR_COLOR).build()).queue();
             }
 
             @Override
             public void loadFailed(FriendlyException exception) {
                 interactionHook.sendMessageEmbeds(new EmbedBuilder()
-                        .setTitle("Jafarbot - Musique")
+                        .setTitle("JafarBot - Musique")
                         .setDescription("Erreur lors de la lecture ! (" + exception.getMessage() + ")")
-                        .setColor(Color.RED)
-                        .setFooter("JafarBot", Main.jafarBot.getAvatarURL()).build()).queue();
+                        .setColor(JafarEmbed.ERROR_COLOR).build()).queue();
             }
         });
     }
 
-    public GuildMusicManager getMusicManager() {
+    public MusicManager getMusicManager() {
         return musicManager;
     }
 }

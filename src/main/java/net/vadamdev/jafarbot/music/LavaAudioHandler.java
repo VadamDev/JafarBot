@@ -30,7 +30,7 @@ public class LavaAudioHandler implements AudioSendHandler {
     @Nullable
     @Override
     public ByteBuffer provide20MsAudio() {
-        final byte[] data = canProvide() ? lastFrame.getData() : null;
+        final byte[] data = canProvide() ? lastFrame.getData() : new byte[0];
         lastFrame = null;
 
         return ByteBuffer.wrap(data);

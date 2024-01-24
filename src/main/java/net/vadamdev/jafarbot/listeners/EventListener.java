@@ -1,7 +1,7 @@
 package net.vadamdev.jafarbot.listeners;
 
-import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
@@ -14,14 +14,15 @@ import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.managers.AudioManager;
 import net.vadamdev.jafarbot.JafarBot;
 import net.vadamdev.jafarbot.Main;
 import net.vadamdev.jafarbot.config.MainConfig;
 import net.vadamdev.jafarbot.profile.Profile;
+import net.vadamdev.jafarbot.utils.JafarEmbed;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
-import java.awt.*;
 import java.time.Instant;
 
 /**
@@ -51,14 +52,13 @@ public class EventListener extends ListenerAdapter {
         guild.addRoleToMember(user, guild.getRoleById(mainConfig.SEPARATOR_2_ROLE)).queue();
         guild.addRoleToMember(user, guild.getRoleById(mainConfig.SEPARATOR_3_ROLE)).queue();
 
-        //Send welcome message
-        guild.getTextChannelById(mainConfig.WELCOME_CHANNEL).sendMessageEmbeds(new EmbedBuilder()
+        //Send a welcome message
+        guild.getTextChannelById(mainConfig.WELCOME_CHANNEL).sendMessageEmbeds(new JafarEmbed()
                 .setTitle("Bienvenue " + user.getEffectiveName() + " !")
                 .setDescription("Bienvenue **" + user.getAsMention() + "** sur le discord de **" + guild.getName() + "** !")
                 .setThumbnail(user.getAvatarUrl())
                 .setTimestamp(Instant.now())
-                .setColor(Color.ORANGE)
-                .setFooter("JafarBot", Main.jafarBot.getAvatarURL()).build()).queue();
+                .setColor(JafarEmbed.NEUTRAL_COLOR).build()).queue();
 
         //Create the profile
         jafarBot.getProfileManager().getProfile(user.getId());
@@ -83,18 +83,27 @@ public class EventListener extends ListenerAdapter {
 
     @Override
     public void onGuildVoiceUpdate(@Nonnull GuildVoiceUpdateEvent event) {
-        final User user = event.getMember().getUser();
-        if(user.isBot())
+        final Guild guild = event.getGuild();
+        final Member member = event.getMember();
+        final String memberId = member.getId();
+
+        final AudioChannelUnion channelJoined = event.getChannelJoined();
+        final AudioChannelUnion channelLeft = event.getChannelLeft();
+
+        if(member.getUser().isBot()) {
+            if(event.getJDA().getSelfUser().getId().equals(memberId) && channelJoined != null && channelLeft != null && channelJoined.getUserLimit() == 1) {
+                guild.moveVoiceMember(member, channelLeft).queue();
+            }
+
             return;
+        }
 
         jafarBot.getChannelCreatorManager().handleVoiceUpdateEvent(event);
         jafarBot.getCaptainedBoatManager().handleVoiceUpdateEvent(event);
 
-        final VoiceChannel afkChannel = event.getGuild().getAfkChannel();
-        final AudioChannelUnion channelJoined = event.getChannelJoined();
-        final AudioChannelUnion channelLeft = event.getChannelLeft();
+        final VoiceChannel afkChannel = guild.getAfkChannel();
 
-        final Profile profile = jafarBot.getProfileManager().getProfile(user.getId());
+        final Profile profile = jafarBot.getProfileManager().getProfile(memberId);
 
         if(channelJoined != null && !isAfkChannel(channelJoined, afkChannel) && channelLeft == null)
             profile.updateConnectionTime();

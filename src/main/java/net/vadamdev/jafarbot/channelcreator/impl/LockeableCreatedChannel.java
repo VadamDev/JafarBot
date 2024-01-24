@@ -1,6 +1,5 @@
 package net.vadamdev.jafarbot.channelcreator.impl;
 
-import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageEmbed;
@@ -12,9 +11,9 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.vadamdev.jafarbot.Main;
 import net.vadamdev.jafarbot.channelcreator.CreatedChannel;
 import net.vadamdev.jafarbot.channelcreator.InteractionListener;
+import net.vadamdev.jafarbot.utils.JafarEmbed;
 
 import javax.annotation.Nonnull;
-import java.awt.*;
 
 /**
  * @author VadamDev
@@ -33,28 +32,27 @@ public class LockeableCreatedChannel extends CreatedChannel implements Interacti
         final Member member = event.getMember();
 
         switch(event.getComponentId()) {
-            case "jafarBot-LockeableChannel-Lock":
+            case "JafarBot-LockeableChannel-Lock":
                 if(!isOwner(member.getId(), event))
                     return;
 
-                setLocked(event.getGuild(), !locked);
                 event.deferEdit().queue();
+                setLocked(event.getGuild(), !locked);
 
                 break;
-            case "jafarBot-LockeableChannel-Delete":
+            case "JafarBot-LockeableChannel-Delete":
                 if(!isOwner(member.getId(), event))
                     return;
 
-                event.replyEmbeds(new EmbedBuilder()
+                event.replyEmbeds(new JafarEmbed()
                         .setTitle("Salon de " + member.getEffectiveName())
                         .setDescription("Êtes-vous sur(e) de vouloir supprimer ce salon ?\n*Cela déconnectera toutes les personnes présentent à l'intérieur !*")
-                        .setColor(Color.ORANGE)
-                        .setFooter("JafarBot", Main.jafarBot.getAvatarURL()).build()).setActionRow(
-                                Button.danger("jafarBot-LockeableChannel-ConfirmDelete", "Confirmer")
+                        .setColor(JafarEmbed.NEUTRAL_COLOR).build()).setActionRow(
+                                Button.danger("JafarBot-LockeableChannel-ConfirmDelete", "Confirmer")
                         ).setEphemeral(true).queue();
 
                 break;
-            case "jafarBot-LockeableChannel-ConfirmDelete":
+            case "JafarBot-LockeableChannel-ConfirmDelete":
                 if(!isOwner(member.getId(), event))
                     return;
 
@@ -106,18 +104,23 @@ public class LockeableCreatedChannel extends CreatedChannel implements Interacti
 
     @Nonnull
     protected MessageEmbed createConfigMessage(Member owner) {
-        return new EmbedBuilder()
+        return new JafarEmbed()
                 .setTitle("Salon de " + owner.getEffectiveName())
                 .setDescription(
-                        ">>> Status: " + (locked ? "\uD83D\uDD12" : "\uD83D\uDD13") + "\n")
-                .setColor(Color.ORANGE)
-                .setFooter("Jafarbot", Main.jafarBot.getAvatarURL()).build();
+                        "**Informations:**\n" +
+                        "> Status: " + (locked ? "\uD83D\uDD12" : "\uD83D\uDD13") + "\n" +
+                        "\n" +
+                        "**Boutons**\n" +
+                        "> " + (!locked ? "\uD83D\uDD12" : "\uD83D\uDD13") + " *: " + (locked ? "Déverrouiller" : "Verrouiller") + " le salon*\n" +
+                        "> \uD83D\uDDD1 *: Fermer le salon*"
+                )
+                .setColor(JafarEmbed.NEUTRAL_COLOR).build();
     }
 
     protected ItemComponent[] getComponents() {
         return new ItemComponent[] {
-                Button.primary("jafarBot-LockeableChannel-Lock", Emoji.fromUnicode(locked ? "\uD83D\uDD13" : "\uD83D\uDD12")),
-                Button.danger("jafarBot-LockeableChannel-Delete", Emoji.fromUnicode("\uD83D\uDDD1️"))
+                Button.secondary("JafarBot-LockeableChannel-Lock", Emoji.fromUnicode(locked ? "\uD83D\uDD13" : "\uD83D\uDD12")),
+                Button.secondary("JafarBot-LockeableChannel-Delete", Emoji.fromUnicode("\uD83D\uDDD1️"))
         };
     }
 

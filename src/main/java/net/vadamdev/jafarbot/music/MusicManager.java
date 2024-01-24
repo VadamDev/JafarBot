@@ -6,14 +6,12 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
 import net.vadamdev.jafarbot.Main;
 
-public class GuildMusicManager {
+public class MusicManager {
     private final AudioPlayer audioPlayer;
     private final TrackScheduler trackScheduler;
     private final LavaAudioHandler audioHandler;
 
-    private Message interfaceMessage;
-
-    public GuildMusicManager(Guild guild, AudioPlayerManager audioPlayerManager) {
+    public MusicManager(Guild guild, AudioPlayerManager audioPlayerManager) {
         this.audioPlayer = audioPlayerManager.createPlayer();
         this.audioPlayer.setVolume(Main.jafarBot.mainConfig.MUSIC_DEFAULT_VOLUME);
 
@@ -33,13 +31,5 @@ public class GuildMusicManager {
 
     public LavaAudioHandler getAudioHandler() {
         return audioHandler;
-    }
-
-    public Message getInterfaceMessage() {
-        return interfaceMessage;
-    }
-
-    public void setInterfaceMessage(Message interfaceMessage) {
-        this.interfaceMessage = interfaceMessage;
     }
 }
