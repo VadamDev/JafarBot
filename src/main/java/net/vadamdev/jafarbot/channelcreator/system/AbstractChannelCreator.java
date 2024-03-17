@@ -1,4 +1,4 @@
-package net.vadamdev.jafarbot.channelcreator;
+package net.vadamdev.jafarbot.channelcreator.system;
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
@@ -16,11 +16,11 @@ import java.util.function.Supplier;
  * @author VadamDev
  * @since 27/08/2023
  */
-public abstract class ChannelCreator<T extends CreatedChannel> {
+public abstract class AbstractChannelCreator<T extends CreatedChannel> {
     private final Supplier<String> creatorId;
     private Constructor<T> constructor;
 
-    public ChannelCreator(Supplier<String> creatorId, Class<T> clazz) {
+    public AbstractChannelCreator(Supplier<String> creatorId, Class<T> clazz) {
         this.creatorId = creatorId;
 
         try {
@@ -37,13 +37,7 @@ public abstract class ChannelCreator<T extends CreatedChannel> {
         final String channelName = getChannelName(owner)
                 .replace("%index%", (Main.jafarBot.getChannelCreatorManager().getActiveChannelAmount(creatorId) + 1) + "");
 
-        final ChannelAction<VoiceChannel> action;
-        if(categoryId != null && guild.getCategoryById(categoryId) != null)
-            action = guild.createVoiceChannel(channelName, guild.getCategoryById(categoryId));
-        else
-            action = guild.createVoiceChannel(channelName);
-
-        computeCreateAction(action).queue(channel -> {
+        computeChannelAction(guild.createVoiceChannel(channelName, categoryId != null ? guild.getCategoryById(categoryId) : null)).queue(channel -> {
             guild.moveVoiceMember(owner, channel).queue();
 
             try {
@@ -63,11 +57,11 @@ public abstract class ChannelCreator<T extends CreatedChannel> {
     protected abstract String getCategoryId(Member owner);
 
     @Nonnull
-    protected ChannelAction<VoiceChannel> computeCreateAction(ChannelAction<VoiceChannel> voiceAction) {
+    protected ChannelAction<VoiceChannel> computeChannelAction(ChannelAction<VoiceChannel> voiceAction) {
         return voiceAction;
     }
 
-    String getCreatorId() {
-        return creatorId.get();
+    Supplier<String> getCreatorId() {
+        return creatorId;
     }
 }

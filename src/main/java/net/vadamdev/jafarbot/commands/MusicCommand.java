@@ -26,7 +26,6 @@ import net.vadamdev.jdautils.commands.data.ICommandData;
 import net.vadamdev.jdautils.commands.data.SlashCmdData;
 
 import javax.annotation.Nonnull;
-import java.awt.*;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;

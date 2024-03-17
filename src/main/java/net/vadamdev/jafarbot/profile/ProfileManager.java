@@ -25,6 +25,8 @@ import java.util.concurrent.TimeUnit;
  * @since 09/06/2023
  */
 public final class ProfileManager {
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+
     private final Map<String, Profile> cache;
     private final File profilesFile;
 
@@ -54,7 +56,6 @@ public final class ProfileManager {
         return cache.computeIfAbsent(userId, Profile::new);
     }
 
-    @Nonnull
     public Collection<Profile> getProfiles() {
         return cache.values();
     }
@@ -65,15 +66,13 @@ public final class ProfileManager {
 
     public void serialize() {
         final JSONArray jsonArray = new JSONArray();
-
-        final Gson gson = new GsonBuilder().setPrettyPrinting().create();
         final JSONParser parser = new JSONParser();
 
         Main.logger.info("Serializing " + cache.size() + " profiles...");
 
         cache.forEach((userId, profile) -> {
             try {
-                final JSONObject json = (JSONObject) parser.parse(gson.toJson(profile));
+                final JSONObject json = (JSONObject) parser.parse(GSON.toJson(profile));
 
                 if(profile.getCaptainedBoat() != null)
                     json.put("captainedBoat", profile.getCaptainedBoat().toJsonObject());
@@ -97,11 +96,9 @@ public final class ProfileManager {
         try {
             Main.logger.info("Unserializing profiles...");
 
-            final Gson gson = new GsonBuilder().create();
-
             for (Object o : (JSONArray) JSONUtils.parseFile(profilesFile)) {
                 final JSONObject jsonObject = (JSONObject) o;
-                final Profile profile = gson.fromJson(jsonObject.toJSONString(), Profile.class);
+                final Profile profile = GSON.fromJson(jsonObject.toJSONString(), Profile.class);
 
                 final JSONObject captainedBoatJson = (JSONObject) jsonObject.get("captainedBoat");
                 if(captainedBoatJson != null)

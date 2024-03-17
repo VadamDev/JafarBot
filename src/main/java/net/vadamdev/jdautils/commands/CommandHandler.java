@@ -3,17 +3,16 @@ package net.vadamdev.jdautils.commands;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.requests.GatewayIntent;
-import net.vadamdev.jafarbot.Main;
 import net.vadamdev.jdautils.commands.data.ICommandData;
 import net.vadamdev.jdautils.commands.data.SlashCmdData;
 import net.vadamdev.jdautils.commands.data.TextCmdData;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
@@ -29,6 +28,9 @@ import java.util.stream.Collectors;
  */
 public final class CommandHandler {
     public static Consumer<Message> PERMISSION_ACTION = message -> message.reply("You don't have enough permission.").queue();
+    public static boolean LOGGING = true;
+
+    private static final Logger logger = LoggerFactory.getLogger(CommandHandler.class);
 
     private final List<Command> commands;
     private final String commandPrefix;
@@ -38,11 +40,11 @@ public final class CommandHandler {
         this.commandPrefix = commandPrefix;
 
         if(commandPrefix != null && !jda.getGatewayIntents().contains(GatewayIntent.MESSAGE_CONTENT))
-            LoggerFactory.getLogger(CommandHandler.class).warn("MESSAGE_CONTENT is currently not enabled, legacy commands will not work!");
+            logger.warn("MESSAGE_CONTENT intent is currently not enabled, legacy commands are disabled!");
     }
 
     /*
-       Legacy Commands
+       Handle Events
      */
 
     public void handleMessageReceive(@Nonnull MessageReceivedEvent event) {
@@ -75,10 +77,6 @@ public final class CommandHandler {
         }
     }
 
-    /*
-       Slash Commands
-     */
-
     public void handleSlashCommandInteraction(@Nonnull SlashCommandInteractionEvent event) {
         commands.stream()
                 .filter(ISlashCommand.class::isInstance)
@@ -97,12 +95,9 @@ public final class CommandHandler {
                 });
     }
 
-    public void handleCommandAutoCompleteInteraction(@Nonnull CommandAutoCompleteInteractionEvent event) {
-        commands.stream()
-                .filter(ISlashCommand.class::isInstance)
-                .filter(command -> command.check(event.getName()))
-                .findFirst().ifPresent(command -> ((ISlashCommand) command).onAutoCompleteEvent(event));
-    }
+    /*
+       Register
+     */
 
     public void registerCommand(Command command) {
         commands.add(command);
@@ -125,18 +120,26 @@ public final class CommandHandler {
         jda.updateCommands().addCommands(commands).queue();
     }
 
+    /*
+       Utils
+     */
+
     private void logCommandExecution(Member sender, ICommandData commandData, String commandName) {
+        if(!LOGGING)
+            return;
+
         final StringBuilder formattedCommand = new StringBuilder(commandName);
 
         if(commandData.getType().equals(ICommandData.Type.TEXT)) {
-            for(String arg : ((TextCmdData) commandData).getArgs())
+            for(String arg : commandData.castOrNull(TextCmdData.class).getArgs()) {
                 formattedCommand.append(" " + arg);
+            }
         }else if(commandData.getType().equals(ICommandData.Type.SLASH)) {
-            final SlashCommandInteractionEvent event = ((SlashCmdData) commandData).getEvent();
+            final SlashCommandInteractionEvent event = commandData.castOrNull(SlashCmdData.class).getEvent();
             event.getOptions().forEach(optionMapping -> formattedCommand.append(" (" + optionMapping.getName() + ": " + formatOptionMapping(optionMapping) + ")"));
         }
 
-        Main.logger.info(sender.getUser().getName() + " in " + sender.getGuild().getId() + " issued command: " + formattedCommand);
+        logger.info(sender.getUser().getName() + " in " + sender.getGuild().getId() + " issued command: " + formattedCommand);
     }
 
     private String formatOptionMapping(OptionMapping optionMapping) {
@@ -159,7 +162,7 @@ public final class CommandHandler {
                 final Message.Attachment attachment = optionMapping.getAsAttachment();
                 return attachment.getFileName() + "." + attachment.getFileExtension() + " (attachment)";
             default:
-                return "UNKNOWN OPTION";
+                return "UNKNOWN_OPTION";
         }
     }
 }

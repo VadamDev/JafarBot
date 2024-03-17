@@ -1,4 +1,4 @@
-package net.vadamdev.jafarbot.channelcreator;
+package net.vadamdev.jafarbot.channelcreator.system;
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
@@ -18,7 +18,7 @@ import java.util.*;
  * @since 27/08/2023
  */
 public final class ChannelCreatorManager {
-    private final Map<String, ChannelCreator<?>> channelCreators;
+    private final Map<String, AbstractChannelCreator<?>> channelCreators;
     private final Map<String, List<CreatedChannel>> createdChannels;
 
     public ChannelCreatorManager() {
@@ -56,20 +56,17 @@ public final class ChannelCreatorManager {
 
     public void handleButtonInteractionEvent(@Nonnull ButtonInteractionEvent event) {
         findCreatedChannel(event.getChannel().getId())
-                .filter(pair -> pair.getRight() instanceof InteractionListener)
-                .ifPresent(pair -> ((InteractionListener) pair.getRight()).handleButtonInteractionEvent(event));
+                .ifPresent(pair -> pair.getRight().handleButtonInteractionEvent(event));
     }
 
     public void handleSelectInteractionEvent(@Nonnull StringSelectInteractionEvent event) {
         findCreatedChannel(event.getChannel().getId())
-                .filter(pair -> pair.getRight() instanceof InteractionListener)
-                .ifPresent(pair -> ((InteractionListener) pair.getRight()).handleSelectInteractionEvent(event));
+                .ifPresent(pair -> pair.getRight().handleSelectInteractionEvent(event));
     }
 
     public void handleModalInteractionEvent(@Nonnull ModalInteractionEvent event) {
         findCreatedChannel(event.getChannel().getId())
-                .filter(pair -> pair.getRight() instanceof InteractionListener)
-                .ifPresent(pair -> ((InteractionListener) pair.getRight()).handleModalInteractionEvent(event));
+                .ifPresent(pair -> pair.getRight().handleModalInteractionEvent(event));
     }
 
     public void handleChannelDelete(@Nonnull VoiceChannel voiceChannel) {
@@ -81,12 +78,12 @@ public final class ChannelCreatorManager {
        Utils
      */
 
-    public void registerChannelCreator(ChannelCreator<?> channelCreator) {
-        channelCreators.put(channelCreator.getCreatorId(), channelCreator);
+    public void registerChannelCreator(AbstractChannelCreator<?> channelCreator) {
+        channelCreators.put(channelCreator.getCreatorId().get(), channelCreator);
     }
 
-    public void registerChannelCreators(ChannelCreator<?>... channelCreators) {
-        for(ChannelCreator<?> channelCreator : channelCreators)
+    public void registerChannelCreators(AbstractChannelCreator<?>... channelCreators) {
+        for(AbstractChannelCreator<?> channelCreator : channelCreators)
             registerChannelCreator(channelCreator);
     }
 

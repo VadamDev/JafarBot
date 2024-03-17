@@ -5,6 +5,8 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import javax.annotation.Nonnull;
 
 /**
+ * Represents the data of a Slash Command
+ *
  * @author VadamDev
  * @since 08/06/2023
  */

@@ -8,15 +8,15 @@ import javax.annotation.Nullable;
  * @since 08/06/2023
  */
 public interface ICommandData {
-    enum Type {
-        TEXT, SLASH
-    }
-
     @Nonnull
     Type getType();
 
     @Nullable
     default <T extends ICommandData> T castOrNull(Class<T> clazz) {
         return getClass().isAssignableFrom(clazz) ? (T) this : null;
+    }
+
+    enum Type {
+        TEXT, SLASH
     }
 }

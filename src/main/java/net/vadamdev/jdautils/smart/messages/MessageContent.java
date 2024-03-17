@@ -13,10 +13,10 @@ import java.util.*;
  */
 public class MessageContent {
     private Collection<MessageEmbed> embeds;
-    private final List<ISmartComponent[]> interactables;
+    private final List<ISmartComponent[]> intractables;
 
     public MessageContent() {
-        this.interactables = new ArrayList<>();
+        this.intractables = new ArrayList<>();
     }
 
     /*
@@ -28,7 +28,7 @@ public class MessageContent {
     }
 
     public void addComponents(ISmartComponent... component) {
-        interactables.add(component);
+        intractables.add(component);
     }
 
     /*
@@ -39,10 +39,10 @@ public class MessageContent {
         return embeds;
     }
 
-    protected List<ISmartComponent> getClickeableComponents() {
+    protected List<ISmartComponent> getSmartComponents() {
         final List<ISmartComponent> components = new ArrayList<>();
 
-        for(ISmartComponent[] interactable : interactables)
+        for(ISmartComponent[] interactable : intractables)
             Collections.addAll(components, interactable);
 
         return components;
@@ -51,7 +51,7 @@ public class MessageContent {
     protected Collection<ActionRow> getComponents() {
         final List<ActionRow> rows = new ArrayList<>();
 
-        for (ISmartComponent[] interactable : interactables) {
+        for (ISmartComponent[] interactable : intractables) {
             final List<ItemComponent> components = new ArrayList<>();
 
             for(ISmartComponent component : interactable)

@@ -75,6 +75,12 @@ public class MainConfig extends Configuration {
     @ConfigValue(path = "channelCreator.boatCreatorCategory")
     public String BOAT_CREATOR_CATEGORY = "ID_HERE";
 
+    @ConfigValue(path = "channelCreator.captainedBoatCreator")
+    public String CAPTAINED_BOAT_CREATOR = "ID_HERE";
+
+    @ConfigValue(path = "channelCreator.captainedBoatCreatorCategory")
+    public String CAPTAINED_BOAT_CREATOR_CATEGORY = "ID_HERE";
+
     @ConfigValue(path = "channelCreator.gamesCreator")
     public String GAMES_CREATOR = "ID_HERE";
 
@@ -86,12 +92,6 @@ public class MainConfig extends Configuration {
 
     @ConfigValue(path = "channelCreator.jafarmcCreatorCategory")
     public String JAFARMC_CREATOR_CATEGORY = "ID_HERE";
-
-    @ConfigValue(path = "channelCreator.captainedBoatCreator")
-    public String CAPTAINED_BOAT_CREATOR = "ID_HERE";
-
-    @ConfigValue(path = "channelCreator.captainedBoatCreatorCategory")
-    public String CAPTAINED_BOAT_CREATOR_CATEGORY = "ID_HERE";
 
     /*
        Music

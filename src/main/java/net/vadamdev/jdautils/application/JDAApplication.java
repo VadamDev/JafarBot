@@ -5,11 +5,10 @@ import net.dv8tion.jda.api.managers.Presence;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 import java.util.function.Consumer;
 
@@ -25,7 +24,7 @@ public class JDAApplication<T extends JDABot> {
 
     private final Map<String, Consumer<T>> commands;
 
-    public JDAApplication(@Nonnull T jdaBot, @Nullable Logger logger) {
+    public JDAApplication(T jdaBot, @Nullable Logger logger) {
         this.jdaBot = jdaBot;
 
         if(logger == null)
@@ -53,10 +52,10 @@ public class JDAApplication<T extends JDABot> {
         try {
             jdaBot.setup();
         }catch(Exception e) {
+            logger.error("An error occurred while starting the bot:");
             e.printStackTrace();
 
-            logger.error("An error occurred while starting the bot! Disabling JDA Application...");
-            System.exit(0);
+            System.exit(-1);
         }
 
         final Scanner scanner = new Scanner(System.in);
@@ -64,15 +63,17 @@ public class JDAApplication<T extends JDABot> {
             try {
                 final String str = scanner.next();
 
-                Optional<Map.Entry<String, Consumer<T>>> t = commands.entrySet().stream()
+                Map.Entry<String, Consumer<T>> command = commands.entrySet().stream()
                         .filter(entry -> entry.getKey().equals(str))
-                        .findFirst();
+                        .findFirst().orElse(null);
 
-                if(t.isPresent())
-                    t.get().getValue().accept(jdaBot);
+                if(command != null)
+                    command.getValue().accept(jdaBot);
                 else
                     logger.info("Unknown command ! Type help to see a list of all available commands.");
-            }catch(Exception ignored) {}
+            } catch(NoSuchElementException | IllegalStateException e) {
+                e.printStackTrace();
+            }
         }while(scanner.hasNext());
     }
 
@@ -81,8 +82,6 @@ public class JDAApplication<T extends JDABot> {
 
         jdaBot.onDisable();
         System.exit(0);
-
-        logger.info("The JDA Application has been disabled !");
     }
 
     public void registerCommand(String name, Consumer<T> command) {

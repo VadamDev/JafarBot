@@ -14,7 +14,6 @@ import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.dv8tion.jda.api.managers.AudioManager;
 import net.vadamdev.jafarbot.JafarBot;
 import net.vadamdev.jafarbot.Main;
 import net.vadamdev.jafarbot.config.MainConfig;

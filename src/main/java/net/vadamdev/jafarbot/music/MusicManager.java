@@ -3,7 +3,6 @@ package net.vadamdev.jafarbot.music;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.Message;
 import net.vadamdev.jafarbot.Main;
 
 public class MusicManager {

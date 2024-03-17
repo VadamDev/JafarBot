@@ -15,8 +15,6 @@ import net.vadamdev.jafarbot.utils.JafarEmbed;
 import net.vadamdev.jafarbot.utils.Utils;
 
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class PlayerManager {
     private final AudioPlayerManager audioPlayerManager;

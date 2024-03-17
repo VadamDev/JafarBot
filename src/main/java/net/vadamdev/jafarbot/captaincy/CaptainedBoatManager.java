@@ -63,11 +63,12 @@ public final class CaptainedBoatManager {
                         .findFirst().ifPresent(captainedBoat -> {
                             guild.moveVoiceMember(member, event.getChannelLeft()).queue();
 
-                            member.getUser().openPrivateChannel()
-                                    .flatMap(channel -> channel.sendMessageEmbeds(new JafarEmbed()
+                            member.getUser().openPrivateChannel().flatMap(channel ->
+                                    channel.sendMessageEmbeds(new JafarEmbed()
                                             .setTitle("Bateaux Capitainés")
                                             .setDescription("Ce channel a été bloquer par son capitaine. **Vous ne pouvez pas le rejoindre** !")
-                                            .setColor(JafarEmbed.ERROR_COLOR).build())).queue();
+                                            .setColor(JafarEmbed.ERROR_COLOR).build()
+                                    )).queue();
                         });
         }
 

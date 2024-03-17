@@ -32,7 +32,7 @@ public class SmartMessage {
                 .setComponents(content.getComponents()).complete()
                 .retrieveOriginal().complete();
 
-        SmartInteractionsManager.registerSmartMessage(message, content.getClickeableComponents());
+        SmartInteractionsManager.registerSmartMessage(message, content.getSmartComponents());
 
         return message;
     }
@@ -44,7 +44,7 @@ public class SmartMessage {
                 .setComponents(content.getComponents())
                 .complete();
 
-        SmartInteractionsManager.registerSmartMessage(message, content.getClickeableComponents());
+        SmartInteractionsManager.registerSmartMessage(message, content.getSmartComponents());
 
         return message;
     }
@@ -57,7 +57,7 @@ public class SmartMessage {
                 .complete();
 
         SmartInteractionsManager.unregisterSmartMessage(message.getGuildId(), message.getId());
-        SmartInteractionsManager.registerSmartMessage(message, content.getClickeableComponents());
+        SmartInteractionsManager.registerSmartMessage(message, content.getSmartComponents());
     }
 
     private MessageContent computeContent(Guild guild, String channelId) {

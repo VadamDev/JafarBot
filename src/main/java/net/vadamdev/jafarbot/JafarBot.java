@@ -7,10 +7,9 @@ import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.vadamdev.jafarbot.activity.ActivityTracker;
 import net.vadamdev.jafarbot.captaincy.CaptainedBoatManager;
-import net.vadamdev.jafarbot.channelcreator.ChannelCreatorManager;
-import net.vadamdev.jafarbot.channelcreator.impl.BoatChannelCreator;
-import net.vadamdev.jafarbot.channelcreator.impl.GamesChannelCreator;
-import net.vadamdev.jafarbot.channelcreator.impl.JafarMcChannelCreator;
+import net.vadamdev.jafarbot.channelcreator.LockeableCreatedChannel;
+import net.vadamdev.jafarbot.channelcreator.SimpleChannelCreator;
+import net.vadamdev.jafarbot.channelcreator.system.ChannelCreatorManager;
 import net.vadamdev.jafarbot.commands.*;
 import net.vadamdev.jafarbot.config.MainConfig;
 import net.vadamdev.jafarbot.listeners.EventListener;
@@ -49,7 +48,7 @@ public class JafarBot extends JDABot implements IReloadable {
 
     @Override
     public void onEnable() {
-        loadConfigs();
+        initFiles();
 
         jda.getPresence().setActivity(mainConfig.formatActivity());
 
@@ -57,9 +56,24 @@ public class JafarBot extends JDABot implements IReloadable {
 
         channelCreatorManager = new ChannelCreatorManager();
         channelCreatorManager.registerChannelCreators(
-                new BoatChannelCreator(),
-                new GamesChannelCreator(),
-                new JafarMcChannelCreator()
+                new SimpleChannelCreator<>(
+                        () -> mainConfig.BOAT_CREATOR,
+                        () -> mainConfig.BOAT_CREATOR_CATEGORY,
+                        owner -> "⛵┃Bateau #%index%",
+                        LockeableCreatedChannel.class
+                ),
+                new SimpleChannelCreator<>(
+                        () -> mainConfig.GAMES_CREATOR,
+                        () -> mainConfig.GAMES_CREATOR_CATEGORY,
+                        owner -> "\uD83C\uDFAE┃Vocal #%index%",
+                        LockeableCreatedChannel.class
+                ),
+                new SimpleChannelCreator<>(
+                        () -> mainConfig.JAFARMC_CREATOR,
+                        () -> mainConfig.JAFARMC_CREATOR_CATEGORY,
+                        owner -> "\uD83E\uDDF1┃Vocal #%index%",
+                        LockeableCreatedChannel.class
+                )
         );
 
         captainedBoatManager = new CaptainedBoatManager(profileManager);
@@ -104,7 +118,7 @@ public class JafarBot extends JDABot implements IReloadable {
         profileManager.onDisable();
     }
 
-    private void loadConfigs() {
+    private void initFiles() {
         try {
             ConfigurationLoader.loadConfiguration(mainConfig);
         } catch (IOException | IllegalAccessException e) {

@@ -22,12 +22,12 @@ public class Configuration {
         this.yamlFile = yamlFile;
     }
 
-    public Configuration(String path) {
-        this(new YamlFile(path));
-    }
-
     public Configuration(File file) {
         this(new YamlFile(file));
+    }
+
+    public Configuration(String path) {
+        this(new YamlFile(path));
     }
 
     /**
