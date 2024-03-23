@@ -20,9 +20,8 @@ dependencies {
     implementation group: 'net.dv8tion', name: 'JDA', version: '5.0.0-beta.21'
     implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.3.14'
 
-    //implementation group: 'dev.arbjerg', name:'lavaplayer', version:'2.1.1'
-    //implementation 'com.github.lavalink-devs:lavaplayer:set-target-compatibility-SNAPSHOT'
-    implementation 'com.github.devoxin:lavaplayer:1.8.0'
+    //Using the devoxin fork as it's the only Java 8 compatible fork of lavaplayer. Looking forward to updating the project to Java 17
+    implementation group: 'com.github.devoxin', name: 'lavaplayer', version: '1.8.0'
 
     implementation group: 'me.carleslc.Simple-YAML', name: 'Simple-Yaml', version: '1.8.4'
     implementation group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.2'
