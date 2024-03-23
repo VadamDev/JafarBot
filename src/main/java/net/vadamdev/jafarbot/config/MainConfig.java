@@ -6,6 +6,7 @@ import net.vadamdev.jdautils.configuration.ConfigValue;
 import net.vadamdev.jdautils.configuration.Configuration;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 
 /**
@@ -107,12 +108,16 @@ public class MainConfig extends Configuration {
         super("./config.yml");
     }
 
+    @Nullable
     public Activity formatActivity() {
+        if(ACTIVITY_TYPE == null || ACTIVITY == null)
+            return null;
+
         return Activity.of(Activity.ActivityType.valueOf(ACTIVITY_TYPE), ACTIVITY);
     }
 
-    public void updateActivity(@Nonnull JDA jda, @Nonnull Activity.ActivityType activityType, @Nonnull String activity) throws IOException {
-        setValue("ACTIVITY_TYPE", activityType.name());
+    public void updateActivity(@Nonnull JDA jda, @Nullable Activity.ActivityType activityType, @Nullable String activity) throws IOException {
+        setValue("ACTIVITY_TYPE", activityType != null ? activityType.name() : null);
         setValue("ACTIVITY", activity);
         save();
 

@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <appender name="Console" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{dd-MM-yy HH:mm:ss} %boldCyan(%-34.-34thread) %boldGreen(%-15.-15logger{0}) %highlight(%-6level) %msg%n</pattern>
         </encoder>
     </appender>
 
-    <appender name="LATEST" class="ch.qos.logback.core.FileAppender">
+    <appender name="File" class="ch.qos.logback.core.FileAppender">
         <file>latest.log</file>
         <append>false</append>
         <encoder>
@@ -15,7 +15,9 @@
     </appender>
 
     <root level="info">
-        <appender-ref ref="STDOUT" />
-        <appender-ref ref="LATEST" />
+        <appender-ref ref="Console" />
+        <appender-ref ref="File" />
     </root>
+
+    <turboFilter class="net.vadamdev.jafarbot.utils.LogbackTurboFilter" />
 </configuration>

@@ -192,7 +192,7 @@ public class MusicCommand extends Command implements ISlashCommand {
                     event.replyEmbeds(new JafarEmbed()
                             .setTitle("JafarBot - Musique")
                             .setDescription("Le volume est actuellement à " + musicManager.getAudioPlayer().getVolume() + "%.")
-                            .setColor(JafarEmbed.ERROR_COLOR).build()).queue();
+                            .setColor(JafarEmbed.NEUTRAL_COLOR).build()).queue();
                 }else {
                     if(volume > Main.jafarBot.mainConfig.MUSIC_MAX_VOLUME) {
                         event.replyEmbeds(new JafarEmbed()

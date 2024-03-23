@@ -6,7 +6,7 @@ plugins {
 
 application.mainClass = "net.vadamdev.jafarbot.Main"
 group 'net.vadamdev.jafarbot'
-version '2.4.1'
+version '2.4.2'
 
 repositories {
     mavenCentral()
@@ -20,7 +20,9 @@ dependencies {
     implementation group: 'net.dv8tion', name: 'JDA', version: '5.0.0-beta.21'
     implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.3.14'
 
-    implementation group: 'com.github.walkyst', name: 'lavaplayer-fork', version: '1.4.3'
+    //implementation group: 'dev.arbjerg', name:'lavaplayer', version:'2.1.1'
+    //implementation 'com.github.lavalink-devs:lavaplayer:set-target-compatibility-SNAPSHOT'
+    implementation 'com.github.devoxin:lavaplayer:1.8.0'
 
     implementation group: 'me.carleslc.Simple-YAML', name: 'Simple-Yaml', version: '1.8.4'
     implementation group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.2'
@@ -28,5 +30,17 @@ dependencies {
     implementation group: 'com.google.code.gson', name: 'gson', version: '2.10.1'
 }
 
-sourceCompatibility = targetCompatibility = 1.8
+tasks.withType(Tar).configureEach {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
+
+tasks.withType(Zip).configureEach {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
 compileJava.options.encoding = 'UTF-8'

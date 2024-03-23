@@ -34,11 +34,16 @@ public class ActivityCommand extends Command implements ISlashCommand {
         final SlashCommandInteractionEvent event = commandData.castOrNull(SlashCmdData.class).getEvent();
 
         try {
-            Main.jafarBot.mainConfig.updateActivity(
-                    event.getJDA(),
-                    Activity.ActivityType.valueOf(event.getOption("type", OptionMapping::getAsString).toUpperCase()),
-                    event.getOption("activity").getAsString()
-            );
+            final String type = event.getOption("type", OptionMapping::getAsString).toUpperCase();
+            if(type.equals("NONE"))
+                Main.jafarBot.mainConfig.updateActivity(event.getJDA(), null, null);
+            else {
+                Main.jafarBot.mainConfig.updateActivity(
+                        event.getJDA(),
+                        Activity.ActivityType.valueOf(type),
+                        event.getOption("activity").getAsString()
+                );
+            }
 
             event.replyEmbeds(new JafarEmbed()
                     .setTitle("JafarBot - Activité")
@@ -60,6 +65,7 @@ public class ActivityCommand extends Command implements ISlashCommand {
         return Commands.slash(name, "Commande permettant de changer l'activité du bot")
                 .addOptions(
                         new OptionData(OptionType.STRING, "type", "Type d'activité")
+                                .addChoice("Aucune", "NONE")
                                 .addChoice("Joue à", "PLAYING")
                                 .addChoice("Ecoute", "LISTENING")
                                 .addChoice("Regarde", "WATCHING")
