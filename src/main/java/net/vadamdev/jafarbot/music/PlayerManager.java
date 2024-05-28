@@ -1,13 +1,23 @@
 package net.vadamdev.jafarbot.music;
 
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerRegistry;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
-import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
+import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.source.bandcamp.BandcampAudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.source.beam.BeamAudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.source.getyarn.GetyarnAudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.source.http.HttpAudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.source.local.LocalAudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.source.soundcloud.SoundCloudAudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.source.twitch.TwitchStreamAudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.source.vimeo.VimeoAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
+import dev.lavalink.youtube.YoutubeAudioSourceManager;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.interactions.InteractionHook;
@@ -17,17 +27,28 @@ import net.vadamdev.jafarbot.utils.Utils;
 import java.util.List;
 
 public class PlayerManager {
+    private static final AudioSourceManager[] sourceManagers = new AudioSourceManager[] {
+            new YoutubeAudioSourceManager(), //Lavalink's YoutubeAudioSourceManager
+            SoundCloudAudioSourceManager.createDefault(),
+            new BandcampAudioSourceManager(),
+            new VimeoAudioSourceManager(),
+            new TwitchStreamAudioSourceManager(),
+            new BeamAudioSourceManager(),
+            new GetyarnAudioSourceManager(),
+            new HttpAudioSourceManager(MediaContainerRegistry.DEFAULT_REGISTRY),
+
+            new LocalAudioSourceManager(MediaContainerRegistry.DEFAULT_REGISTRY)
+    };
+
     private final AudioPlayerManager audioPlayerManager;
     private final MusicManager musicManager;
 
     public PlayerManager(Guild guild) {
         this.audioPlayerManager = new DefaultAudioPlayerManager();
+        audioPlayerManager.registerSourceManagers(sourceManagers);
 
         this.musicManager = new MusicManager(guild, audioPlayerManager);
         guild.getAudioManager().setSendingHandler(musicManager.getAudioHandler());
-
-        AudioSourceManagers.registerRemoteSources(audioPlayerManager);
-        AudioSourceManagers.registerLocalSource(audioPlayerManager);
     }
 
     public void loadAndPlay(InteractionHook interactionHook, String source) {
