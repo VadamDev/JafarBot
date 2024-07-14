@@ -67,12 +67,6 @@ public class JafarBot extends JDABot implements IReloadable {
                         () -> mainConfig.GAMES_CREATOR_CATEGORY,
                         owner -> "\uD83C\uDFAE┃Vocal #%index%",
                         LockeableCreatedChannel.class
-                ),
-                new SimpleChannelCreator<>(
-                        () -> mainConfig.JAFARMC_CREATOR,
-                        () -> mainConfig.JAFARMC_CREATOR_CATEGORY,
-                        owner -> "\uD83E\uDDF1┃Vocal #%index%",
-                        LockeableCreatedChannel.class
                 )
         );
 
