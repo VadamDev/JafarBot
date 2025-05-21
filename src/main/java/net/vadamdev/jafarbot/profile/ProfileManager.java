@@ -1,116 +1,94 @@
 package net.vadamdev.jafarbot.profile;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import net.vadamdev.jafarbot.Main;
-import net.vadamdev.jafarbot.captaincy.CaptainedBoat;
+import net.vadamdev.dbk.framework.DBKFramework;
+import net.vadamdev.jafarbot.JafarBot;
 import net.vadamdev.jafarbot.utils.JSONUtils;
+import net.vadamdev.jafarbot.utils.Utils;
+import org.jetbrains.annotations.NotNull;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.slf4j.Logger;
 
-import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
  * @author VadamDev
  * @since 09/06/2023
  */
-public final class ProfileManager {
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+public class ProfileManager {
+    private final Map<String, Profile> profiles;
+    private final File dataFile;
 
-    private final Map<String, Profile> cache;
-    private final File profilesFile;
+    public ProfileManager(String dataFilePath) throws IOException {
+        this.profiles = new HashMap<>();
+        this.dataFile = Utils.createFile(dataFilePath);
 
-    private final ScheduledExecutorService executorService;
+        deserialize();
 
-    public ProfileManager(File profilesFile) {
-        this.cache = new HashMap<>();
-        this.profilesFile = profilesFile;
-
-        unserialize();
-
-        this.executorService = Executors.newSingleThreadScheduledExecutor();
-        this.executorService.scheduleAtFixedRate(this::serialize, 6, 6, TimeUnit.HOURS);
+        DBKFramework.getScheduledExecutorMonoThread().scheduleAtFixedRate(this::serialize, 6, 6, TimeUnit.HOURS);
     }
 
-    public void onDisable() {
-        executorService.shutdownNow();
-        serialize();
+    @NotNull
+    public Profile getOrCreateProfile(String userId) {
+        return profiles.computeIfAbsent(userId, Profile::new);
     }
 
-    public void deleteProfile(@Nonnull String userId) {
-        cache.remove(userId);
-    }
-
-    @Nonnull
-    public Profile getProfile(@Nonnull String userId) {
-        return cache.computeIfAbsent(userId, Profile::new);
+    public void deleteProfile(String userId) {
+        profiles.remove(userId);
     }
 
     public Collection<Profile> getProfiles() {
-        return cache.values();
+        return profiles.values();
     }
 
     /*
-       Serialize & Unserialize
+       Serialization
      */
 
     public void serialize() {
+        final Logger logger = JafarBot.getLogger();
+
         final JSONArray jsonArray = new JSONArray();
         final JSONParser parser = new JSONParser();
 
-        Main.logger.info("Serializing " + cache.size() + " profiles...");
+        logger.info("Serializing " + profiles.size() + " profiles to " + dataFile.getName() + "...");
 
-        cache.forEach((userId, profile) -> {
+        profiles.forEach((userId, profile) -> {
             try {
-                final JSONObject json = (JSONObject) parser.parse(GSON.toJson(profile));
-
-                if(profile.getCaptainedBoat() != null)
-                    json.put("captainedBoat", profile.getCaptainedBoat().toJsonObject());
-
-                jsonArray.add(json);
-            } catch (ParseException e) {
-                Main.logger.error("An error occured while serializing " + profile.getUserId() + "'s profile:");
-                e.printStackTrace();
+                jsonArray.add(profile.toJSON(parser));
+            }catch (Exception e) {
+                logger.error("Failed to serialize profile for user " + userId, e);
             }
         });
 
         try {
-            JSONUtils.saveJSONAwareToFile(jsonArray, profilesFile);
-            Main.logger.info("Done !");
-        } catch (IOException e) {
+            JSONUtils.saveJSONAwareToFile(jsonArray, dataFile);
+            logger.info("-> Done !");
+        }catch(IOException e) {
             e.printStackTrace();
         }
     }
 
-    public void unserialize() {
+    public void deserialize() {
+        final Logger logger = JafarBot.getLogger();
+        logger.info("Deserializing profiles from " + dataFile.getName() + "...");
+
         try {
-            Main.logger.info("Unserializing profiles...");
-
-            for (Object o : (JSONArray) JSONUtils.parseFile(profilesFile)) {
+            for(Object o : JSONUtils.parseFile(dataFile, JSONArray::new)) {
                 final JSONObject jsonObject = (JSONObject) o;
-                final Profile profile = GSON.fromJson(jsonObject.toJSONString(), Profile.class);
-
-                final JSONObject captainedBoatJson = (JSONObject) jsonObject.get("captainedBoat");
-                if(captainedBoatJson != null)
-                    profile.setCaptainedBoat(CaptainedBoat.fromJsonObject(captainedBoatJson, profile.getUserId()));
-
-                cache.put((String) jsonObject.get("userId"), profile);
+                profiles.put((String) jsonObject.get("userId"), Profile.fromJSON(jsonObject));
             }
 
-            Main.logger.info("Done !");
-        } catch (IOException | ParseException e) {
-            Main.logger.error("An error occured while unserializing profiles:");
-            e.printStackTrace();
+            logger.info("-> Done !");
+        }catch (ParseException | IOException e) {
+            logger.error("Failed to deserialize profiles", e);
         }
     }
 }

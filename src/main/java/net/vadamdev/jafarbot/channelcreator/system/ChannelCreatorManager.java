@@ -1,114 +1,130 @@
 package net.vadamdev.jafarbot.channelcreator.system;
 
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
+import net.dv8tion.jda.api.events.channel.ChannelDeleteEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
-import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
-import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
-import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
-import net.dv8tion.jda.internal.utils.tuple.ImmutablePair;
+import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.vadamdev.dbk.framework.tuple.ImmutablePair;
 
-import javax.annotation.Nonnull;
 import java.util.*;
 
 /**
  * @author VadamDev
- * @since 27/08/2023
+ * @since 31/03/2025
  */
-public final class ChannelCreatorManager {
-    private final Map<String, AbstractChannelCreator<?>> channelCreators;
+public class ChannelCreatorManager extends ListenerAdapter {
+    private final Map<String, AbstractChannelCreator> channelCreators;
     private final Map<String, List<CreatedChannel>> createdChannels;
 
-    public ChannelCreatorManager() {
+    private final ChannelCreatorManager instance;
+
+    public ChannelCreatorManager(JDA jda) {
         this.channelCreators = new HashMap<>();
         this.createdChannels = new HashMap<>();
+
+        this.instance = this;
+
+        jda.addEventListener(new Listener());
     }
 
     /*
-       Handle Events
+       Channel Creator Registry
      */
 
-    public void handleVoiceUpdateEvent(@Nonnull GuildVoiceUpdateEvent event) {
-        final AudioChannelUnion joined = event.getChannelJoined();
-        final AudioChannelUnion left = event.getChannelLeft();
-
-        if(joined != null && joined.getType().equals(ChannelType.VOICE)) {
-            final String channelId = joined.asVoiceChannel().getId();
-
-            if(channelCreators.containsKey(channelId))
-                channelCreators.get(channelId).createChannel(event.getGuild(), event.getMember());
-        }
-
-        if(left != null && left.getType().equals(ChannelType.VOICE)) {
-            final VoiceChannel voiceChannel = left.asVoiceChannel();
-
-            if(voiceChannel.getMembers().isEmpty()) {
-                findCreatedChannel(voiceChannel.getId())
-                        .ifPresent(tuple -> {
-                            createdChannels.get(tuple.getLeft()).remove(tuple.getRight());
-                            voiceChannel.delete().queue();
-                        });
-            }
-        }
+    public void registerChannelCreator(AbstractChannelCreator channelCreator) {
+        channelCreators.put(channelCreator.getCreatorId(), channelCreator);
     }
 
-    public void handleButtonInteractionEvent(@Nonnull ButtonInteractionEvent event) {
-        findCreatedChannel(event.getChannel().getId())
-                .ifPresent(pair -> pair.getRight().handleButtonInteractionEvent(event));
-    }
-
-    public void handleSelectInteractionEvent(@Nonnull StringSelectInteractionEvent event) {
-        findCreatedChannel(event.getChannel().getId())
-                .ifPresent(pair -> pair.getRight().handleSelectInteractionEvent(event));
-    }
-
-    public void handleModalInteractionEvent(@Nonnull ModalInteractionEvent event) {
-        findCreatedChannel(event.getChannel().getId())
-                .ifPresent(pair -> pair.getRight().handleModalInteractionEvent(event));
-    }
-
-    public void handleChannelDelete(@Nonnull VoiceChannel voiceChannel) {
-        findCreatedChannel(voiceChannel.getId())
-                .ifPresent(pair -> createdChannels.get(pair.getLeft()).remove(pair.getRight()));
-    }
-
-    /*
-       Utils
-     */
-
-    public void registerChannelCreator(AbstractChannelCreator<?> channelCreator) {
-        channelCreators.put(channelCreator.getCreatorId().get(), channelCreator);
-    }
-
-    public void registerChannelCreators(AbstractChannelCreator<?>... channelCreators) {
-        for(AbstractChannelCreator<?> channelCreator : channelCreators)
+    public void registerChannelCreators(AbstractChannelCreator... channelCreators) {
+        for(AbstractChannelCreator channelCreator : channelCreators)
             registerChannelCreator(channelCreator);
     }
 
+    public void removeChannelCreator(String creatorId) {
+        channelCreators.remove(creatorId);
+    }
+
+    /*
+       Created Channels Manipulation
+     */
+
     public void deleteCreatedChannel(Guild guild, String channelId) {
         findCreatedChannel(channelId).ifPresent(pair -> {
-            createdChannels.get(pair.getLeft()).remove(pair.getRight());
+            final CreatedChannel createdChannel = pair.getRight();
 
             final VoiceChannel voiceChannel = guild.getVoiceChannelById(channelId);
+            createdChannel.onChannelDeletion(voiceChannel);
+
             if(voiceChannel != null)
                 voiceChannel.delete().queue();
+
+            createdChannels.computeIfPresent(pair.getLeft(), (k, channels) -> {
+                channels.remove(createdChannel);
+                return channels.isEmpty() ? null : channels;
+            });
         });
     }
 
-    private Optional<ImmutablePair<String, CreatedChannel>> findCreatedChannel(String channelId) {
+    public Optional<ImmutablePair<String, CreatedChannel>> findCreatedChannel(String channelId) {
         return createdChannels.entrySet().stream()
-                .filter(entry -> entry.getValue().stream().anyMatch(channel -> channel.getChannelId().equals(channelId)))
-                .map(entry -> new ImmutablePair<>(entry.getKey(), entry.getValue().stream().filter(channel -> channel.getChannelId().equals(channelId)).findFirst().get()))
-                .findFirst();
+                .flatMap(entry -> entry.getValue().stream()
+                        .filter(channel -> channel.getChannelId().equals(channelId))
+                        .map(channel -> ImmutablePair.of(entry.getKey(), channel))
+                ).findFirst();
     }
 
-    int getActiveChannelAmount(String creatorId) {
+    public int getActiveChannelAmount(String creatorId) {
         return createdChannels.containsKey(creatorId) ? createdChannels.get(creatorId).size() : 0;
     }
 
-    void registerCreatedChannel(String creatorId, CreatedChannel activeChannel) {
-        createdChannels.computeIfAbsent(creatorId, k -> new ArrayList<>()).add(activeChannel);
+    /*
+        Listener
+     */
+
+    private final class Listener extends ListenerAdapter {
+        @Override
+        public void onGuildVoiceUpdate(GuildVoiceUpdateEvent event) {
+            final Guild guild = event.getGuild();
+
+            final AudioChannelUnion joined = event.getChannelJoined();
+            if(joined != null && joined.getType().isAudio()) {
+                final String channelId = joined.getId();
+
+                if(channelCreators.containsKey(channelId)) {
+                    channelCreators.get(channelId)
+                            .createChannel(instance, guild, event.getMember())
+                            .whenComplete((channel, throwable) -> {
+                                if(throwable != null) {
+                                    throwable.printStackTrace();
+                                    return;
+                                }
+
+                                if(channel == null)
+                                    return;
+
+                                createdChannels.computeIfAbsent(channelId, k -> new ArrayList<>()).add(channel);
+                            });
+                }
+            }
+
+            final AudioChannelUnion left = event.getChannelLeft();
+            if(left != null && left.getType().isAudio()) {
+                final VoiceChannel voiceChannel = left.asVoiceChannel();
+
+                if(voiceChannel.getMembers().isEmpty())
+                    deleteCreatedChannel(guild, voiceChannel.getId());
+            }
+        }
+
+        @Override
+        public void onChannelDelete(ChannelDeleteEvent event) {
+            if(!event.getChannelType().isAudio())
+                return;
+
+            deleteCreatedChannel(event.getGuild(), event.getChannel().getId());
+        }
     }
 }

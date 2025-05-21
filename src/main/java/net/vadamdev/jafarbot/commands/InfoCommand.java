@@ -4,78 +4,75 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageEmbed;
-import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
-import net.vadamdev.jafarbot.Main;
-import net.vadamdev.jafarbot.activity.ActivityTracker;
+import net.vadamdev.dbk.framework.commands.annotations.AnnotationProcessor;
+import net.vadamdev.dbk.framework.commands.annotations.CommandProcessor;
+import net.vadamdev.jafarbot.commands.api.GuildLinkedCommand;
+import net.vadamdev.jafarbot.configs.MainConfig;
 import net.vadamdev.jafarbot.profile.Profile;
-import net.vadamdev.jafarbot.utils.JafarEmbed;
-import net.vadamdev.jdautils.commands.Command;
-import net.vadamdev.jdautils.commands.ISlashCommand;
-import net.vadamdev.jdautils.commands.data.ICommandData;
-import net.vadamdev.jdautils.commands.data.SlashCmdData;
+import net.vadamdev.jafarbot.profile.ProfileManager;
+import net.vadamdev.jafarbot.utils.EmbedUtils;
+import net.vadamdev.jafarbot.utils.Utils;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.time.Instant;
 import java.util.Comparator;
-import java.util.List;
 
-public class InfoCommand extends Command implements ISlashCommand {
-    public InfoCommand() {
-        super("info");
-        setPermission(Permission.MESSAGE_MANAGE);
+/**
+ * @author VadamDev
+ */
+public class InfoCommand extends GuildLinkedCommand {
+    private final MainConfig mainConfig;
+    private final ProfileManager profileManager;
+
+    public InfoCommand(MainConfig mainConfig, ProfileManager profileManager) {
+        super("info", "Permet de récupérer des informations sur les membres du discord");
+        setRequiredPermissions(Permission.MESSAGE_MANAGE);
+
+        this.mainConfig = mainConfig;
+        this.profileManager = profileManager;
     }
 
-    @Override
-    public void execute(@Nonnull Member sender, @Nonnull ICommandData commandData) {
-        final SlashCommandInteractionEvent event = commandData.castOrNull(SlashCmdData.class).getEvent();
+    @CommandProcessor(subCommand = "get")
+    private void getSubCommand(SlashCommandInteractionEvent event) {
+        event.replyEmbeds(getUserInfos(event.getOption("target", OptionMapping::getAsMember))).queue();
+    }
 
-        switch(event.getSubcommandName()) {
-            case "get":
-                event.replyEmbeds(getUserInfos(event.getOption("target", OptionMapping::getAsMember))).queue();
+    @CommandProcessor(subCommand = "top")
+    private void topSubCommand(SlashCommandInteractionEvent event) {
+        final int limit = Math.clamp(event.getOption("limit", 15, OptionMapping::getAsInt), 5, 50);
+        final boolean showFriends = event.getOption("showfriends", false, OptionMapping::getAsBoolean);
+        final boolean showRetired = event.getOption("showretired", false, OptionMapping::getAsBoolean);
 
-                break;
-            case "top":
-                final int limit = event.getOption("limit", 15, OptionMapping::getAsInt);
-                final boolean showFriends = event.getOption("showfriends", false, OptionMapping::getAsBoolean);
-                final boolean showRetired = event.getOption("showretired", false, OptionMapping::getAsBoolean);
-
-                event.replyEmbeds(createUserTop(event.getGuild(), limit, showFriends, showRetired)).queue();
-
-                break;
-            default:
-                break;
-        }
+        event.replyEmbeds(createUserTop(event.getGuild(), limit, showFriends, showRetired)).queue();
     }
 
     private MessageEmbed getUserInfos(Member member) {
         final StringBuilder description = new StringBuilder("Activité Récente:\n");
-        boolean flag = false;
+        boolean flag = false; // Wtf is this flag for?
 
-        final Profile profile = Main.jafarBot.getProfileManager().getProfile(member.getId());
+        final Profile profile = profileManager.getOrCreateProfile(member.getId());
         if(profile.isInVC()) {
             description.append("- Le <t:" + profile.getConnectionTime() / 1000 + ":f> *actuellement en vocal*\n \n");
             flag = true;
-        }else if(ActivityTracker.hasInactiveRole(member, Main.jafarBot.mainConfig.INACTIVE_ROLE)) {
+        }else if(Utils.hasRole(member, mainConfig.INACTIVE_ROLE)) {
             description.append("**Actuellement inactif**\n \n");
             flag = true;
         }
 
-        long[][] activityData = profile.getActivityData();
-        for (long[] activityDatum : activityData) {
-            final long connectionTime = activityDatum[0];
-            final long deconnectionTime = activityDatum[1];
+        for(long[] activityData : profile.getActivityData()) {
+            final long loginTime = activityData[0];
+            final long logoutTime = activityData[1];
 
-            if(connectionTime == 0 || deconnectionTime == 0)
+            if(loginTime == 0 || logoutTime == 0)
                 continue;
 
-            description.append("- Le <t:" + connectionTime / 1000 + ":f> pendant " + formatLastActivity(deconnectionTime - connectionTime) + "\n");
+            description.append("- Le <t:" + loginTime / 1000 + ":f> pendant " + Utils.formatMsToHMS(logoutTime - loginTime) + "\n");
 
             if(!flag)
                 flag = true;
@@ -84,66 +81,61 @@ public class InfoCommand extends Command implements ISlashCommand {
         if(!flag)
             description.append("Aucune");
 
-        return new JafarEmbed()
+        return EmbedUtils.defaultSuccess(description.toString())
                 .setTitle("Informations de " + member.getEffectiveName())
-                .setDescription(description.toString())
-                .setColor(JafarEmbed.NEUTRAL_COLOR)
                 .setTimestamp(Instant.now()).build();
     }
 
     private MessageEmbed createUserTop(Guild guild, int limit, boolean showFriends, boolean showRetired) {
         final StringBuilder description = new StringBuilder();
 
-        Main.jafarBot.getProfileManager().getProfiles().stream()
+        profileManager.getProfiles().stream()
                 .filter(profile -> guild.getMemberById(profile.getUserId()) != null)
                 .filter(profile -> {
                     final long[] activityData = profile.getActivityData()[0];
                     return activityData[0] != 0 && activityData[1] != 0;
                 })
                 .filter(profile -> {
-                    final List<Role> roles = guild.getMemberById(profile.getUserId()).getRoles();
+                    //Seriously, this needs a rewrite
+                    final Member member = guild.getMemberById(profile.getUserId());
 
-                    if((showFriends && roles.stream().anyMatch(role -> role.getId().equals(Main.jafarBot.mainConfig.FRIEND_ROLE)) || (showRetired && roles.stream().anyMatch(role -> role.getId().equals(Main.jafarBot.mainConfig.RETIRED_ROLE)))))
+                    final boolean hasFriendRole = Utils.hasRole(member, mainConfig.FRIEND_ROLE);
+                    final boolean hasRetiredRole = Utils.hasRole(member, mainConfig.RETIRED_ROLE);
+
+                    if((showFriends && hasFriendRole || (showRetired && hasRetiredRole)))
                         return true;
 
-                    return roles.stream().noneMatch(role -> role.getId().equals(Main.jafarBot.mainConfig.FRIEND_ROLE) || role.getId().equals(Main.jafarBot.mainConfig.RETIRED_ROLE));
+                    return !(hasFriendRole && hasRetiredRole);
                 })
                 .sorted(Comparator.comparingLong(Profile::getLastActivity))
                 .limit(limit)
                 .forEach(profile -> {
-                    Member member = guild.getMemberById(profile.getUserId());
-                    description.append("- " + member.getAsMention() + (ActivityTracker.hasInactiveRole(member, Main.jafarBot.mainConfig.INACTIVE_ROLE) ? " (\uD83D\uDCA4)" : "") + " (<t:" + profile.getLastActivity() / 1000 + ":R>)\n");
+                    final Member member = guild.getMemberById(profile.getUserId());
+                    description.append("- " + member.getAsMention() + (Utils.hasRole(member, mainConfig.INACTIVE_ROLE) ? " (\uD83D\uDCA4)" : "") + " (<t:" + profile.getLastActivity() / 1000 + ":R>)\n");
                 });
 
-        return new JafarEmbed()
-                .setTitle("TOP des Inactifs")
-                .setDescription(description.toString())
-                .setColor(JafarEmbed.NEUTRAL_COLOR)
-                .setTimestamp(Instant.now()).build();
+        return EmbedUtils.defaultSuccess(description.toString()).setTitle("TOP des Inactifs").setTimestamp(Instant.now()).build();
     }
 
-    @Nonnull
+    @NotNull
     @Override
-    public SlashCommandData createSlashCommand() {
-        return Commands.slash(name, "Commande destiné à récupéré des informations sur les membres du discord")
-                .addSubcommands(
-                        new SubcommandData("get", "Permet de connaitre l'activité d'un membre du discord")
-                                .addOptions(
-                                        new OptionData(OptionType.USER, "target", "Cible")
-                                                .setRequired(true)
-                                ),
-                        new SubcommandData("top", "Renvois un leaderboard des personnes les plus inactives du discord")
-                                .addOptions(
-                                        new OptionData(OptionType.INTEGER, "limit", "Définie la taille maximale du TOP")
-                                                .setMinValue(5)
-                                                .setMaxValue(50),
-                                        new OptionData(OptionType.BOOLEAN, "showfriends", "Mettez la valeur sur TRUE si vous souhaitez que même les ADJ soit compté dans le leaderboard"),
-                                        new OptionData(OptionType.BOOLEAN, "showretired", "Mettez la valeur sur TRUE si vous souhaitez que même les RDLL soit compté dans le leaderboard")
-                                )
-                );
+    public SlashCommandData createCommandData() {
+        return super.createCommandData().addSubcommands(
+                new SubcommandData("get", "Permet de connaitre l'activité d'un membre du discord").addOptions(
+                        new OptionData(OptionType.USER, "target", "Target", true)
+                ),
+
+                new SubcommandData("top", "Renvois un leaderboard des personnes les plus inactives du discord").addOptions(
+                        new OptionData(OptionType.INTEGER, "limit", "Définie la taille maximale du TOP")
+                                .setRequiredRange(5, 50),
+                        new OptionData(OptionType.BOOLEAN, "showfriends", "Mettez la valeur sur TRUE si vous souhaitez que même les ADJ soit compté dans le leaderboard"),
+                        new OptionData(OptionType.BOOLEAN, "showretired", "Mettez la valeur sur TRUE si vous souhaitez que même les RDLL soit compté dans le leaderboard")
+                )
+        );
     }
 
-    private String formatLastActivity(long lastActivityTime) {
-        return String.format("%dh %dm %ds", (lastActivityTime / 3600000) % 24, (lastActivityTime / 60000) % 60, (lastActivityTime / 1000) % 60);
+    @Override
+    public void executeCommand(Member member, SlashCommandInteractionEvent event) {
+        AnnotationProcessor.processAnnotations(event, this);
     }
 }

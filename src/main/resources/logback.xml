@@ -1,23 +1,38 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <appender name="Console" class="ch.qos.logback.core.ConsoleAppender">
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{dd-MM-yy HH:mm:ss} %boldCyan(%-34.-34thread) %boldGreen(%-15.-15logger{0}) %highlight(%-6level) %msg%n</pattern>
         </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
     </appender>
 
-    <appender name="File" class="ch.qos.logback.core.FileAppender">
-        <file>latest.log</file>
-        <append>false</append>
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/latest.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <fileNamePattern>logs/app.%i.log.zip</fileNamePattern>
+            <minIndex>1</minIndex>
+            <maxIndex>3</maxIndex>
+        </rollingPolicy>
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <maxFileSize>5MB</maxFileSize>
+        </triggeringPolicy>
         <encoder>
             <pattern>[%d{dd-MM-yy HH:mm:ss}] [%logger{0}/%level]: %msg%n</pattern>
         </encoder>
     </appender>
 
-    <root level="info">
-        <appender-ref ref="Console" />
-        <appender-ref ref="File" />
-    </root>
+    <appender name="WEBHOOK" class="net.vadamdev.jafarbot.logger.WebhookAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+    </appender>
 
-    <turboFilter class="net.vadamdev.jafarbot.utils.LogbackTurboFilter" />
+    <root level="debug">
+        <appender-ref ref="STDOUT" />
+        <appender-ref ref="FILE" />
+        <appender-ref ref="WEBHOOK" />
+    </root>
 </configuration>

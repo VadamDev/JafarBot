@@ -1,82 +1,59 @@
 package net.vadamdev.jafarbot.channelcreator;
 
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
-import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
-import net.dv8tion.jda.api.interactions.components.ItemComponent;
-import net.dv8tion.jda.api.interactions.components.buttons.Button;
-import net.vadamdev.jafarbot.Main;
+import net.dv8tion.jda.api.interactions.components.ActionComponent;
+import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
+import net.vadamdev.dbk.framework.interactive.api.registry.MessageRegistry;
+import net.vadamdev.dbk.framework.interactive.entities.buttons.InteractiveButton;
+import net.vadamdev.dbk.framework.menu.InteractiveComponentMenu;
+import net.vadamdev.jafarbot.JafarBot;
 import net.vadamdev.jafarbot.channelcreator.system.CreatedChannel;
-import net.vadamdev.jafarbot.utils.JafarEmbed;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import net.vadamdev.jafarbot.utils.EmbedUtils;
+import net.vadamdev.jafarbot.utils.Utils;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author VadamDev
- * @since 29/08/2023
+ * @since 01/04/2025
  */
 public class LockeableCreatedChannel extends CreatedChannel {
-    protected static MessageEmbed NOT_OWNER_MESSAGE = new JafarEmbed()
+    public static MessageEmbed NOT_OWNER_MESSAGE = EmbedUtils.defaultEmbed(EmbedUtils.ERROR_COLOR)
             .setTitle("Salon Personnalisé")
-            .setDescription("Vous pouvez interagir avec ces boutons seulement si vous êtes le propriétaire de ce salon !")
-            .setColor(JafarEmbed.ERROR_COLOR).build();
+            .setDescription("Vous pouvez interagir avec ces boutons seulement si vous êtes le propriétaire de ce salon !").build();
 
-    private String configMessageId;
+    protected InteractiveComponentMenu menu;
     private boolean locked;
 
     public LockeableCreatedChannel(String channelId, String ownerId) {
         super(channelId, ownerId);
     }
 
-    /*
-       Events
-     */
-
     @Override
-    protected void onChannelCreation(VoiceChannel voiceChannel, Member owner) {
-        updateOrCreateConfigMessage(voiceChannel, owner);
+    public void onChannelCreation(VoiceChannel channel, Member owner) {
+        createOrUpdateConfigMenu(channel, owner);
     }
 
-    @Override
-    protected void handleButtonInteractionEvent(@Nonnull ButtonInteractionEvent event) {
-        final Member member = event.getMember();
+    private void createOrUpdateConfigMenu(VoiceChannel voiceChannel, Member owner) {
+        if(menu == null) {
+            menu = createConfigMenu(owner).build();
+            menu.display(voiceChannel).queue();
+        }else {
+            final JDA jda = voiceChannel.getJDA();
 
-        switch(event.getComponentId()) {
-            case "JafarBot-LockeableChannel-Lock":
-                if(!isOwner(member.getId(), event))
-                    return;
+            menu.getCachedMessage().runIfExists(message -> {
+                menu.invalidate(jda);
 
-                event.deferEdit().queue();
-                setLocked(event.getGuild(), !locked);
+                final InteractiveComponentMenu newMenu = createConfigMenu(owner).build();
+                newMenu.display(message).queue();
+                menu = newMenu;
+            });
 
-                break;
-            case "JafarBot-LockeableChannel-Delete":
-                if(!isOwner(member.getId(), event))
-                    return;
-
-                event.replyEmbeds(new JafarEmbed()
-                        .setTitle("Salon de " + member.getEffectiveName())
-                        .setDescription("Êtes-vous sur(e) de vouloir supprimer ce salon ?\n*Cela déconnectera toutes les personnes présentent à l'intérieur !*")
-                        .setColor(JafarEmbed.NEUTRAL_COLOR).build()).setActionRow(
-                                Button.danger("JafarBot-LockeableChannel-ConfirmDelete", "Confirmer")
-                        ).setEphemeral(true).queue();
-
-                break;
-            case "JafarBot-LockeableChannel-ConfirmDelete":
-                if(!isOwner(member.getId(), event))
-                    return;
-
-                event.deferEdit().queue();
-                Main.jafarBot.getChannelCreatorManager().deleteCreatedChannel(event.getGuild(), channelId);
-
-                break;
-            default:
-                break;
         }
     }
 
@@ -84,26 +61,28 @@ public class LockeableCreatedChannel extends CreatedChannel {
        Utility
      */
 
-    protected void setLocked(Guild guild, boolean locked) {
-        final VoiceChannel voiceChannel = guild.getVoiceChannelById(channelId);
-        final Member owner = guild.getMemberById(ownerId);
+    public void setLocked(Guild guild, boolean locked) {
+        final VoiceChannel voiceChannel = retrieveChannel(guild);
+        final Member owner = retrieveOwner(guild);
 
         if(voiceChannel == null || owner == null)
             return;
 
         if(locked && !this.locked) {
             final int memberSize = voiceChannel.getMembers().size();
-            voiceChannel.getManager().setUserLimit(memberSize == 1 ? 2 : memberSize).complete();
+            voiceChannel.getManager().setUserLimit(Math.max(memberSize, 2)).complete();
         }else if(!locked && this.locked)
             voiceChannel.getManager().setUserLimit(0).complete();
+        else
+            return;
 
         this.locked = locked;
 
-        updateOrCreateConfigMessage(voiceChannel, owner);
+        createOrUpdateConfigMenu(voiceChannel, owner);
     }
 
-    public boolean isOwner(String memberId, @Nullable IReplyCallback replyCallback) {
-        final boolean isOwner = memberId.equals(ownerId);
+    public boolean isOwner(Member member, @Nullable IReplyCallback replyCallback) {
+        final boolean isOwner = member.getId().equals(ownerId);
 
         if(!isOwner && replyCallback != null)
             replyCallback.replyEmbeds(NOT_OWNER_MESSAGE).setEphemeral(true).queue();
@@ -112,44 +91,63 @@ public class LockeableCreatedChannel extends CreatedChannel {
     }
 
     /*
-       Config Message
+       Menu
      */
 
-    protected void updateOrCreateConfigMessage(VoiceChannel voiceChannel, Member owner) {
-        if(configMessageId != null) {
-            voiceChannel.retrieveMessageById(configMessageId).queue(message ->
-                    message.editMessageEmbeds(createConfigEmbed(owner))
-                            .setActionRow(getComponents())
-                            .queue()
-            );
-        }else {
-            voiceChannel.sendMessageEmbeds(createConfigEmbed(owner))
-                    .setActionRow(getComponents())
-                    .queue(message -> configMessageId = message.getId());
-        }
-    }
+    protected MessageRegistry<ActionComponent>[] createComponents(Member owner) {
+        return new MessageRegistry[] {
+                InteractiveButton.of(ButtonStyle.SECONDARY)
+                        .emoji(Emoji.fromUnicode(locked ? "\uD83D\uDD13" : "\uD83D\uDD12"))
+                        .action((event, invalidatable) -> {
+                            if(!isOwner(event.getMember(), event))
+                                return;
 
-    @Nonnull
-    protected MessageEmbed createConfigEmbed(Member owner) {
-        return new JafarEmbed()
-                .setTitle("Salon de " + owner.getEffectiveName())
-                .setDescription(
-                        "**Informations:**\n" +
-                        "> Status: " + (locked ? "\uD83D\uDD12" : "\uD83D\uDD13") + "\n" +
-                        "\n" +
-                        "**Boutons**\n" +
-                        "> " + (!locked ? "\uD83D\uDD12" : "\uD83D\uDD13") + " *: " + (locked ? "Déverrouiller" : "Verrouiller") + " le salon*\n" +
-                        "> \uD83D\uDDD1 *: Fermer le salon*"
-                )
-                .setColor(JafarEmbed.NEUTRAL_COLOR).build();
-    }
+                            event.deferEdit().queue();
+                            setLocked(event.getGuild(), !locked);
+                        }).build(),
+                InteractiveButton.of(ButtonStyle.SECONDARY)
+                        .emoji(Emoji.fromUnicode("\uD83D\uDDD1"))
+                        .action((event, invalidatable) -> {
+                            if(!isOwner(event.getMember(), event))
+                                return;
 
-    @Nonnull
-    protected ItemComponent[] getComponents() {
-        return new ItemComponent[] {
-                Button.secondary("JafarBot-LockeableChannel-Lock", Emoji.fromUnicode(locked ? "\uD83D\uDD13" : "\uD83D\uDD12")),
-                Button.secondary("JafarBot-LockeableChannel-Delete", Emoji.fromUnicode("\uD83D\uDDD1️"))
+                            Utils.createDefaultConfirmationRequest(callback -> {
+                                if(!isOwner(callback.getMember(), callback))
+                                    return;
+
+                                callback.deferEdit().queue();
+                                JafarBot.get().getChannelCreatorManager().deleteCreatedChannel(event.getGuild(), channelId);
+                            }).send(event);
+                        }).build()
         };
+    }
+
+    protected MessageEmbed createConfigMenuEmbed(Member owner) {
+        final String lockEmoji = locked ? "\uD83D\uDD12" : "\uD83D\uDD13";
+
+        return EmbedUtils.defaultEmbed()
+                .setTitle("Salon de " + owner.getEffectiveName())
+                .setDescription(String.format(
+                        """
+                        **Informations:**
+                        > Status: %s
+                        
+                        **Boutons**
+                        > %s *: %s le salon*
+                        > \uD83D\uDDD1 *: Fermer le salon*
+                        """,
+
+                        lockEmoji,
+                        lockEmoji,
+                        locked ? "Déverrouiller" : "Verrouiller"
+                )).build();
+    }
+
+    protected InteractiveComponentMenu.Builder createConfigMenu(Member owner) {
+        return InteractiveComponentMenu.builder()
+                .onInvalidate(null)
+                .addEmbed(createConfigMenuEmbed(owner))
+                .addActionRow(createComponents(owner));
     }
 
     /*

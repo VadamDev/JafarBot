@@ -5,153 +5,161 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
+import net.vadamdev.dbk.framework.DBKFramework;
+import net.vadamdev.dbk.framework.application.JDABot;
+import net.vadamdev.dbk.framework.application.annotations.AppConfig;
+import net.vadamdev.dbk.framework.application.annotations.Bot;
+import net.vadamdev.dbk.framework.config.ConfigurationLoader;
 import net.vadamdev.jafarbot.activity.ActivityTracker;
-import net.vadamdev.jafarbot.captaincy.CaptainedBoatManager;
+import net.vadamdev.jafarbot.captaincy.PortChannelCreator;
 import net.vadamdev.jafarbot.channelcreator.LockeableCreatedChannel;
 import net.vadamdev.jafarbot.channelcreator.SimpleChannelCreator;
 import net.vadamdev.jafarbot.channelcreator.system.ChannelCreatorManager;
 import net.vadamdev.jafarbot.commands.*;
-import net.vadamdev.jafarbot.config.MainConfig;
+import net.vadamdev.jafarbot.configs.MainConfig;
+import net.vadamdev.jafarbot.listeners.ActionLogListener;
 import net.vadamdev.jafarbot.listeners.EventListener;
-import net.vadamdev.jafarbot.music.PlayerManager;
+import net.vadamdev.jafarbot.logger.WebhookLoggingHandler;
+import net.vadamdev.jafarbot.music.GuildMusicManager;
 import net.vadamdev.jafarbot.profile.ProfileManager;
-import net.vadamdev.jafarbot.utils.Utils;
-import net.vadamdev.jdautils.application.IReloadable;
-import net.vadamdev.jdautils.application.JDABot;
-import net.vadamdev.jdautils.configuration.ConfigurationLoader;
-
-import javax.annotation.Nonnull;
-import java.io.File;
-import java.io.IOException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author VadamDev
  * @since 08/06/2023
  */
-public class JafarBot extends JDABot implements IReloadable {
-    public final MainConfig mainConfig;
+public class JafarBot extends JDABot {
+    private final Logger logger;
+    private final WebhookLoggingHandler webhookLogger;
 
-    private File profilesFile;
+    private final GuildLinkService guildLinkService;
+
+    private final MainConfig mainConfig;
 
     private ProfileManager profileManager;
-    private ChannelCreatorManager channelCreatorManager;
-    private CaptainedBoatManager captainedBoatManager;
-    private PlayerManager playerManager;
-
     private ActivityTracker activityTracker;
+    private ChannelCreatorManager channelCreatorManager;
+    private GuildMusicManager musicManager;
 
-    public JafarBot() {
-        super(BotToken.RELEASE.getToken(), "!");
+    private long startTime;
+
+    JafarBot() {
+        super(() -> JDABuilder.createDefault(APP_CONFIG.TOKEN)
+                .setChunkingFilter(ChunkingFilter.ALL)
+                .setMemberCachePolicy(MemberCachePolicy.ALL)
+                .enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.MESSAGE_CONTENT)
+                .setActivity(APP_CONFIG.formatActivity()));
+
+        this.logger = LoggerFactory.getLogger(JafarBot.class);
+        this.webhookLogger = new WebhookLoggingHandler();
+
+        this.guildLinkService = new GuildLinkService(APP_CONFIG);
 
         this.mainConfig = new MainConfig();
     }
 
     @Override
-    public void onEnable() {
-        initFiles();
+    protected void onStart() throws Exception {
+        if(APP_CONFIG.WEBHOOK_ENABLED)
+            webhookLogger.init(APP_CONFIG.WEBHOOK_URL);
 
-        jda.getPresence().setActivity(mainConfig.formatActivity());
+        final Guild guild = guildLinkService.init(jda).waitCompleteLink();
+        logger.info("Linked to guild: " + guild.getName() + " (" + guild.getId() + ") !");
 
-        profileManager = new ProfileManager(profilesFile);
+        //Load the main configuration
+        ConfigurationLoader.loadConfiguration(mainConfig);
 
-        channelCreatorManager = new ChannelCreatorManager();
-        channelCreatorManager.registerChannelCreators(
-                new SimpleChannelCreator<>(
-                        () -> mainConfig.BOAT_CREATOR,
-                        () -> mainConfig.BOAT_CREATOR_CATEGORY,
-                        owner -> "⛵┃Bateau #%index%",
-                        LockeableCreatedChannel.class
-                ),
-                new SimpleChannelCreator<>(
-                        () -> mainConfig.GAMES_CREATOR,
-                        () -> mainConfig.GAMES_CREATOR_CATEGORY,
-                        owner -> "\uD83C\uDFAE┃Vocal #%index%",
-                        LockeableCreatedChannel.class
-                )
-        );
-
-        captainedBoatManager = new CaptainedBoatManager(profileManager);
-
-        final Guild guild = jda.getGuildById(mainConfig.GUILD_ID);
-        if(guild != null)
-            playerManager = new PlayerManager(guild);
+        //Load features
+        profileManager = new ProfileManager("./profiles.json");
+        activityTracker = new ActivityTracker();
+        channelCreatorManager = new ChannelCreatorManager(jda); registerChannelCreators();
+        musicManager = new GuildMusicManager(jda);
 
         registerListeners(
-                new EventListener()
+                new EventListener(mainConfig, profileManager),
+                new ActionLogListener(APP_CONFIG, webhookLogger)
         );
 
         registerCommands(
-                new SettingsCommand(),
-                new ActivityTrackerCommand(),
-                new InfoCommand(),
+                new DashboardCommand(),
+                new WebhookLoggerCommand(APP_CONFIG, webhookLogger),
                 new ClearCommand(),
-                new ActivityCommand(),
-
-                new BoatCommand(),
-                new MusicCommand()
+                new ActivityTrackerCommand(mainConfig),
+                new ActivityCommand(APP_CONFIG),
+                new InfoCommand(mainConfig, profileManager),
+                new BoatsCommand(profileManager),
+                new MusicCommand(mainConfig, musicManager)
         );
 
-        activityTracker = new ActivityTracker(jda);
+        startTime = System.currentTimeMillis();
     }
 
     @Override
-    public void onReload() {
-        try {
-            ConfigurationLoader.loadConfiguration(mainConfig);
-            jda.getPresence().setActivity(mainConfig.formatActivity());
-
-            Main.logger.info("Configuration was reloaded successfully !");
-        } catch (IOException | IllegalAccessException e) {
-            e.printStackTrace();
-        }
+    protected void onStop() {
+        profileManager.serialize();
+        webhookLogger.shutdown();
     }
 
-    @Override
-    public void onDisable() {
-        activityTracker.shutdown();
-        profileManager.onDisable();
+    private void registerChannelCreators() {
+        channelCreatorManager.registerChannelCreator(new PortChannelCreator(
+                mainConfig.BOAT_CREATOR,
+                (channel, owner) -> new LockeableCreatedChannel(channel.getId(), owner.getId()),
+                owner -> "⛵┃Bateau #" + SimpleChannelCreator.CHANNEL_INDEX_PLACEHOLDER,
+                owner -> owner.getGuild().getCategoryById(mainConfig.BOAT_CREATOR_CATEGORY)
+        ));
+
+        channelCreatorManager.registerChannelCreator(new SimpleChannelCreator(
+                mainConfig.GAMES_CREATOR,
+                (channel, owner) -> new LockeableCreatedChannel(channel.getId(), owner.getId()),
+                owner -> "\uD83C\uDFAE┃Vocal #" + SimpleChannelCreator.CHANNEL_INDEX_PLACEHOLDER,
+                owner -> owner.getGuild().getCategoryById(mainConfig.GAMES_CREATOR_CATEGORY)
+        ));
     }
 
-    private void initFiles() {
-        try {
-            ConfigurationLoader.loadConfiguration(mainConfig);
-        } catch (IOException | IllegalAccessException e) {
-            e.printStackTrace();
-        }
-
-        try {
-            profilesFile = Utils.initFile("./profiles.json");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public GuildLinkService getGuildLinkService() {
+        return guildLinkService;
     }
 
-    @Nonnull
-    @Override
-    protected JDABuilder computeBuilder(JDABuilder jdaBuilder) {
-        return jdaBuilder
-                .setChunkingFilter(ChunkingFilter.ALL)
-                .setMemberCachePolicy(MemberCachePolicy.ALL)
-                .enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.MESSAGE_CONTENT);
+    public MainConfig getConfig() {
+        return mainConfig;
     }
 
     public ProfileManager getProfileManager() {
         return profileManager;
     }
 
+    public ActivityTracker getActivityTracker() {
+        return activityTracker;
+    }
+
     public ChannelCreatorManager getChannelCreatorManager() {
         return channelCreatorManager;
     }
 
-    public CaptainedBoatManager getCaptainedBoatManager() {
-        return captainedBoatManager;
+    public GuildMusicManager getMusicManager() {
+        return musicManager;
     }
 
-    public PlayerManager getPlayerManager() {
-        return playerManager;
+    public long getUptimeMs() {
+        return System.currentTimeMillis() - startTime;
     }
 
-    public ActivityTracker getActivityTracker() {
-        return activityTracker;
+    /*
+       Main
+     */
+
+    @AppConfig
+    private static final ApplicationConfig APP_CONFIG = new ApplicationConfig();
+
+    @Bot
+    private static final JafarBot INSTANCE = new JafarBot();
+
+    public static JafarBot get() { return INSTANCE; }
+    public static Logger getLogger() { return INSTANCE.logger; }
+    public static WebhookLoggingHandler getWebhookLogger() { return INSTANCE.webhookLogger; }
+
+    public static void main(String[] args) {
+        DBKFramework.launch(INSTANCE.getClass(), INSTANCE.logger);
     }
 }
