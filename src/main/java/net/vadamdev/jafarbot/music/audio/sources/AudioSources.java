@@ -10,6 +10,8 @@ import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.bandcamp.BandcampAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.soundcloud.SoundCloudAudioSourceManager;
 import dev.lavalink.youtube.YoutubeAudioSourceManager;
+import dev.lavalink.youtube.YoutubeSourceOptions;
+import dev.lavalink.youtube.clients.*;
 import org.jetbrains.annotations.Nullable;
 import org.simpleyaml.configuration.ConfigurationSection;
 
@@ -38,19 +40,40 @@ public enum AudioSources {
     YOUTUBE {
         @Override
         protected AudioSourceManager parse(AudioPlayerManager playerManager, ConfigurationSection params) {
-            //TODO: poToken & OAuth
-            return new YoutubeAudioSourceManager(
-                    params.getBoolean("allowSearch"),
-                    params.getBoolean("allowDirectVideoIds"),
-                    params.getBoolean("allowDirectPlay")
+            final YoutubeSourceOptions options = new YoutubeSourceOptions()
+                    .setAllowSearch(params.getBoolean("allowSearch"))
+                    .setAllowDirectVideoIds(params.getBoolean("allowDirectVideoIds"))
+                    .setAllowDirectPlaylistIds(params.getBoolean("allowDirectPlaylistIds"));
+
+            //Default ones are: Music, AndroidVr, Web, WebEmbedded
+            //They are from the common package of YouTube source... We are using v2 ones here and new ones for more success rate and OAuth usage
+            final YoutubeAudioSourceManager result = new YoutubeAudioSourceManager(
+                    options,
+
+                    new MusicWithThumbnail(),
+                    new WebWithThumbnail(), new MWebWithThumbnail(), new WebEmbeddedWithThumbnail(), //Web
+                    new AndroidMusicWithThumbnail(), new AndroidVrWithThumbnail(), //Android
+                    new IosWithThumbnail(), //Ios
+                    new Tv(), new TvHtml5EmbeddedWithThumbnail() //Tv, REQUIRE OAUTH
+
             );
+
+            final ConfigurationSection handlerSection = params.getConfigurationSection("handler");
+            YoutubeAudioHandlerType.of(handlerSection.getString("type")).handle(result, handlerSection);
+
+            return result;
         }
 
         @Override
         protected void compose(ConfigurationSection params) {
             params.addDefault("allowSearch", true);
             params.addDefault("allowDirectVideoIds", true);
-            params.addDefault("allowDirectPlay", true);
+            params.addDefault("allowDirectPlaylistIds", true);
+
+            final ConfigurationSection handlerSection = params.createSection("handler");
+            handlerSection.addDefault("type", YoutubeAudioHandlerType.NONE.name());
+
+            YoutubeAudioHandlerType.composeAll(handlerSection);
         }
 
         @Override

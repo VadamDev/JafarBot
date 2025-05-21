@@ -19,6 +19,8 @@ import java.util.List;
 public final class AudioSourcesLoader {
     private AudioSourcesLoader() {}
 
+    static final YamlFile YAML_FILE = new YamlFile("./sources.yml");
+
     private static final List<AudioSourceManager> AUDIO_SOURCES = new ArrayList<>();
     public static Collection<AudioSourceManager> getAudioSources() { return AUDIO_SOURCES; }
 
@@ -26,12 +28,10 @@ public final class AudioSourcesLoader {
     public static Collection<Command.Choice> getSearchChoices() { return SEARCH_CHOICES; }
 
     public static void load(AudioPlayerManager playerManager) throws IOException {
-        final YamlFile yamlFile = new YamlFile("./sources.yml");
-
-        if(!yamlFile.exists())
-            yamlFile.createNewFile();
+        if(!YAML_FILE.exists())
+            YAML_FILE.createNewFile();
         else
-            yamlFile.load();
+            YAML_FILE.load();
 
         for(AudioSources audioSource : AudioSources.values()) {
             final String path = "sources." + audioSource.name().toLowerCase();
@@ -39,14 +39,14 @@ public final class AudioSourcesLoader {
             boolean enabled;
             ConfigurationSection parameters;
 
-            if(yamlFile.isSet(path)) {
-                enabled = yamlFile.getBoolean(path + ".enabled");
-                parameters = yamlFile.getConfigurationSection(path + ".parameters");
+            if(YAML_FILE.isSet(path)) {
+                enabled = YAML_FILE.getBoolean(path + ".enabled");
+                parameters = YAML_FILE.getConfigurationSection(path + ".parameters");
             }else {
                 enabled = audioSource.isDefaultEnabled();
-                parameters = yamlFile.createSection(path + ".parameters");
+                parameters = YAML_FILE.createSection(path + ".parameters");
 
-                yamlFile.addDefault(path + ".enabled", enabled);
+                YAML_FILE.addDefault(path + ".enabled", enabled);
                 audioSource.compose(parameters);
             }
 
@@ -72,6 +72,6 @@ public final class AudioSourcesLoader {
 
         JafarBot.getLogger().info("Loaded " + AUDIO_SOURCES.size() + " audio sources !");
 
-        yamlFile.save();
+        YAML_FILE.save();
     }
 }
